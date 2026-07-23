@@ -425,7 +425,7 @@ Respond ONLY with minified JSON, no markdown:
   try{
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:900,
+      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:3000,
         messages:[{role:"user",content:prompt}]})
     });
     if(!resp.ok)throw new Error('api');
@@ -439,6 +439,7 @@ Respond ONLY with minified JSON, no markdown:
       .map(a=>({rec:byCode[a.code],conf:a.confidence,reason:a.reason}));
     return{ok:true,best,alts,clarify:p.clarify||null,ai:true};
   }catch(err){
+    console.warn('[classify] AI 응답 처리 실패 → 데모(키워드) 폴백:',err);
     const best={rec:cand[0],conf:Math.min(88,60+cand.length),reason:t('apiHint')};
     const alts=cand.slice(1,3).map((r,i)=>({rec:r,conf:70-i*8,reason:''}));
     return{ok:true,best,alts,clarify:null,ai:false};
