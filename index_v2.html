@@ -265,6 +265,8 @@ const I18N={
     thinking:"관세표에서 근거를 찾는 중",matching:"품목을 분석하는 중",
     confHi:"적합도 높음",confMid:"적합도 보통",confLo:"적합도 낮음 · 확인 필요",
     rateBase:"수입세율 (기본)",rateKR:"한-베 FTA",rateVAT:"수입 VAT",ratesAll:"전체 세율",seeReason:"판단 근거",altsTitle:"다른 후보",useThis:"이 코드로 보기",
+    rlMFN:"기본 관세 (WTO)",rlBase:"협정 없을 때",rlVAT:"부가세 (VAT)",rlAK:"한·아세안 FTA",rlVJ:"일·베트남 협정",rlAT:"아세안 협정",
+    tipMFN:"WTO 회원국 기본 관세율 — FTA 원산지증명(C/O) 없이 수입할 때 적용",tipBase:"협정·MFN 미적용 국가에만 적용되는 일반세율 (한국은 보통 해당 없음)",tipVAT:"수입 부가가치세 — 품목·조건에 따라 5·8·10%",tipAK:"한국·아세안 FTA — 한국 원산지증명(C/O Form AK) 제출 시 적용 (한국 수출 시 핵심)",tipVJ:"일본·베트남 경제동반자협정 — 한국 수출과 무관",tipAT:"아세안 역내 무역협정(ATIGA) — 한국 수출과 무관",
     refLabel:"참조용",refShort:"본 HS 코드는 참조용입니다. 정확한 원재료·HS 해석·사용 목적에 따라 코드가 달라질 수 있어요.",
     rateNote:"세율은 2026년 관세표 기준이며, 6개월~1년 주기로 갱신될 수 있어요. 신고 시점에 다시 확인하세요.",
     copy:"코드 복사",copied:"복사됐어요",save:"저장",confirmed:"저장됨",
@@ -280,6 +282,8 @@ const I18N={
     thinking:"Finding evidence in the tariff",matching:"Analysing the item",
     confHi:"High fit",confMid:"Moderate fit",confLo:"Low fit · please check",
     rateBase:"Import duty (base)",rateKR:"Korea FTA",rateVAT:"Import VAT",ratesAll:"All duty rates",seeReason:"Reasoning",altsTitle:"Other candidates",useThis:"Use this code",
+    rlMFN:"Base duty (WTO)",rlBase:"No agreement",rlVAT:"Import VAT",rlAK:"Korea-ASEAN FTA",rlVJ:"Japan-Vietnam EPA",rlAT:"ASEAN ATIGA",
+    tipMFN:"WTO most-favoured-nation rate — applies when importing without an FTA certificate of origin",tipBase:"Ordinary rate for non-MFN / non-agreement countries (usually not applicable for Korea)",tipVAT:"Import value-added tax — 5, 8 or 10% depending on the item",tipAK:"Korea-ASEAN FTA — applies with a Korean certificate of origin (Form AK); key for exports from Korea",tipVJ:"Japan-Vietnam EPA — not relevant to exports from Korea",tipAT:"ASEAN Trade in Goods Agreement (ATIGA) — not relevant to exports from Korea",
     refLabel:"Reference only",refShort:"This HS code is for reference. The exact raw material, HS interpretation and intended use may change the code.",
     rateNote:"Rates are based on the 2026 tariff and may be revised every 6–12 months. Re-check at the time of filing.",
     copy:"Copy code",copied:"Copied",save:"Save",confirmed:"Saved",
@@ -295,6 +299,8 @@ const I18N={
     thinking:"Đang tìm căn cứ trong biểu thuế",matching:"Đang phân tích mặt hàng",
     confHi:"Độ phù hợp cao",confMid:"Độ phù hợp vừa",confLo:"Độ phù hợp thấp · cần kiểm tra",
     rateBase:"Thuế NK (cơ bản)",rateKR:"FTA Hàn-Việt",rateVAT:"VAT nhập khẩu",ratesAll:"Toàn bộ thuế suất",seeReason:"Lập luận",altsTitle:"Ứng viên khác",useThis:"Dùng mã này",
+    rlMFN:"Thuế cơ bản (WTO)",rlBase:"Không hiệp định",rlVAT:"VAT nhập khẩu",rlAK:"FTA Hàn-ASEAN",rlVJ:"EPA Nhật-Việt",rlAT:"ATIGA",
+    tipMFN:"Thuế suất ưu đãi MFN (WTO) — áp dụng khi nhập khẩu không có C/O của FTA",tipBase:"Thuế suất thông thường cho nước không MFN/không hiệp định",tipVAT:"Thuế GTGT nhập khẩu — 5, 8 hoặc 10% tùy mặt hàng",tipAK:"FTA Hàn-ASEAN — áp dụng khi có C/O Hàn Quốc (Form AK)",tipVJ:"EPA Nhật-Việt — không liên quan xuất khẩu từ Hàn Quốc",tipAT:"ATIGA — không liên quan xuất khẩu từ Hàn Quốc",
     refLabel:"Chỉ tham khảo",refShort:"Mã HS này chỉ để tham khảo. Nguyên liệu, cách diễn giải và mục đích sử dụng có thể làm thay đổi mã.",
     rateNote:"Thuế suất theo biểu thuế 2026 và có thể được cập nhật mỗi 6–12 tháng. Hãy kiểm tra lại tại thời điểm khai báo.",
     copy:"Sao chép mã",copied:"Đã chép",save:"Lưu",confirmed:"Đã lưu",
@@ -400,7 +406,7 @@ async function aiKeywords(query){
   try{
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:2000,
+      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:400,thinking:{type:"disabled"},
         messages:[{role:"user",content:`For HS tariff code search, convert this goods description into English keywords: material, product type, common synonyms (add Vietnamese term if obvious). Description: "${query}". Respond with ONLY a space-separated list of lowercase words, no punctuation, no explanation.`}]})
     });
     if(!resp.ok)return'';
@@ -441,7 +447,7 @@ Respond ONLY with minified JSON, no markdown:
   try{
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:3000,
+      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:1024,thinking:{type:"disabled"},
         messages:[{role:"user",content:prompt}]})
     });
     if(!resp.ok)throw new Error('api');
@@ -481,9 +487,25 @@ function pathHTML(rec){
     ${rec.v?`<div class="vn">${rec.v}</div>`:''}`;
 }
 function pct(v){return (v===''||v==null)?'—':(/^\d/.test(v)?v+'%':v);}
+// 관세표 원문 표기(예: "0(-LA, MY, PH, TH)%", 또는 별표·슬래시 섞인 VAT)를 실무자용 깔끔한 숫자로 정리
+function cleanRate(v){
+  if(v==null||v==='')return'—';
+  v=String(v).trim();
+  const nums=v.match(/\d+(?:\.\d+)?/g);
+  if(!nums)return v;
+  // 별표·슬래시로 나뉜 복수 세율(VAT "8/10", "*/5/8/10")은 전부 표기
+  if(/^[*\/\d.\s]+$/.test(v))return nums.join('/')+'%';
+  // 숫자 뒤에 국가 제외 등 부가정보가 붙은 경우("0(-LA, MY, PH, TH)%")는 앞 숫자만
+  return nums[0]+'%';
+}
 function allRatesHTML(r){
-  const mk=(k,v)=> (v===''||v==null)?'':`<div class="chip"><div class="k">${k}</div><div class="v">${/^\d/.test(v)?v+'%':v}</div></div>`;
-  return mk('일반/Base',r.tt)+mk('우대/Pref',r.ud)+mk('VAT',r.vt)+mk('AKFTA 🇰🇷',r.ak)+mk('VJEPA 🇯🇵',r.vj)+mk('ATIGA',r.at);
+  const mk=(labelKey,tipKey,v)=>{
+    if(v===''||v==null)return'';
+    const raw=String(v).replace(/"/g,'&quot;');
+    const tip=`${t(tipKey)}  ·  원문: ${raw}`;
+    return `<div class="chip" title="${tip}"><div class="k">${t(labelKey)}</div><div class="v">${cleanRate(v)}</div></div>`;
+  };
+  return mk('rlMFN','tipMFN',r.ud)+mk('rlAK','tipAK',r.ak)+mk('rlVAT','tipVAT',r.vt)+mk('rlVJ','tipVJ',r.vj)+mk('rlAT','tipAT',r.at)+mk('rlBase','tipBase',r.tt);
 }
 
 let CURRENT=null;
@@ -509,9 +531,9 @@ function renderAnswer(res,query){
       </div>
 
       <div class="rate2">
-        <div class="rcard"><div class="rk">${t('rateBase')}</div><div class="rv">${pct(b.rec.tt)}</div></div>
-        <div class="rcard kr"><div class="rk">🇰🇷 ${t('rateKR')}</div><div class="rv">${pct(b.rec.ak)}</div></div>
-        <div class="rcard"><div class="rk">${t('rateVAT')}</div><div class="rv">${pct(b.rec.vt)}</div></div>
+        <div class="rcard" title="${t('tipMFN')}"><div class="rk">${t('rlMFN')}</div><div class="rv">${cleanRate(b.rec.ud)}</div></div>
+        <div class="rcard kr" title="${t('tipAK')}"><div class="rk">🇰🇷 ${t('rlAK')}</div><div class="rv">${cleanRate(b.rec.ak)}</div></div>
+        <div class="rcard" title="${t('tipVAT')}"><div class="rk">${t('rlVAT')}</div><div class="rv">${cleanRate(b.rec.vt)}</div></div>
       </div>
 
       <div class="act-row">
