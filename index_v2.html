@@ -275,7 +275,7 @@ const I18N={
     lede:"서류에 적힌 품목명을 그대로 붙여넣으면, 가장 가까운 HS 코드를 찾아드려요.<br>한국어·영어·베트남어 섞여 있어도 괜찮아요.",
     ph:"예) Men's knitted pullover, 100% polyester\n또는  스테인리스 육각 볼트 M8",
     findbtn:"코드 찾기",try:"이렇게 넣어보세요",recent:"최근 확정한 분류",
-    fastLabel:"빠른 검색",fastHint:"정확도가 조금 낮아질 수 있어요",
+    fastLabel:"빠른 검색",fastHint:"간단한 품목을 더 빠르게",
     stamp:"데이터 기준 · 2026년 베트남 수출입 관세표",noteTitle:"이용 안내",
     disclaimer:"본 도구는 HS 코드 후보와 근거를 제시하는 보조 도구입니다. 최종 신고 분류는 통관 담당자가 확정하며, 그 책임은 신고자에게 있습니다. 세율은 원산지증명(C/O)·법령 개정에 따라 달라질 수 있습니다. 관세표 품목명 원문(영어·베트남어)은 법적 기준이며 번역하지 않습니다.",
     thinking:"관세표에서 근거를 찾는 중",matching:"품목을 분석하는 중",
@@ -294,7 +294,7 @@ const I18N={
     lede:"Paste the item name straight from your document. We'll find the closest HS code.<br>Mixed Korean, English and Vietnamese is fine.",
     ph:"e.g. Men's knitted pullover, 100% polyester\nor  stainless hex bolt M8",
     findbtn:"Find code",try:"Try one of these",recent:"Recently confirmed",
-    fastLabel:"Fast search",fastHint:"may be slightly less accurate",
+    fastLabel:"Fast search",fastHint:"faster for simple items",
     stamp:"Data source · Vietnam Import-Export Tariff 2026",noteTitle:"Notes",
     disclaimer:"This is an assistive tool that proposes HS code candidates with evidence. The final declared classification is confirmed by the customs officer, who bears responsibility. Duty rates may vary with certificate of origin and legal amendments. Official tariff descriptions (English/Vietnamese) are the legal reference and are not translated.",
     thinking:"Finding evidence in the tariff",matching:"Analysing the item",
@@ -313,7 +313,7 @@ const I18N={
     lede:"Dán tên hàng trực tiếp từ chứng từ. Chúng tôi tìm mã HS gần nhất.<br>Tiếng Hàn, Anh, Việt lẫn lộn đều được.",
     ph:"vd) Men's knitted pullover, 100% polyester\nhoặc  bu lông lục giác inox M8",
     findbtn:"Tìm mã",try:"Thử một trong số này",recent:"Đã xác nhận gần đây",
-    fastLabel:"Tìm nhanh",fastHint:"có thể kém chính xác hơn một chút",
+    fastLabel:"Tìm nhanh",fastHint:"nhanh hơn cho mặt hàng đơn giản",
     stamp:"Nguồn dữ liệu · Biểu thuế XNK Việt Nam 2026",noteTitle:"Lưu ý",
     disclaimer:"Đây là công cụ hỗ trợ, đề xuất mã HS kèm căn cứ. Việc phân loại khai báo cuối cùng do cán bộ hải quan xác nhận và chịu trách nhiệm. Thuế suất có thể thay đổi theo C/O và sửa đổi pháp luật. Mô tả nguyên văn (Anh/Việt) là căn cứ pháp lý và không được dịch.",
     thinking:"Đang tìm căn cứ trong biểu thuế",matching:"Đang phân tích mặt hàng",
@@ -345,8 +345,8 @@ fetch('hs_data.json').then(r=>r.json()).then(d=>{DATA=d;}).catch(()=>{
 
 /* ---------------- memory ---------------- */
 /* 빠른 검색 모드: 켜면 짧은 품목명의 AI 키워드 확장을 건너뜀(1회 호출, 빠름, 정확도↓) */
-let SPEED_MODE=false;
-try{SPEED_MODE=localStorage.getItem('anchor_speed_mode')==='1';}catch(e){}
+let SPEED_MODE=true;   // 기본값: 빠른 검색 ON
+try{const s=localStorage.getItem('anchor_speed_mode');if(s!==null)SPEED_MODE=(s==='1');}catch(e){}
 
 const MEM_KEY='anchor_hs_confirmed_v1';
 let MEMORY=[];
