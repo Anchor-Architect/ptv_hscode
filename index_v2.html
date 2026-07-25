@@ -263,6 +263,7 @@ const I18N={
     stamp:"데이터 기준 · 2026년 베트남 수출입 관세표",noteTitle:"이용 안내",
     disclaimer:"본 도구는 HS 코드 후보와 근거를 제시하는 보조 도구입니다. 최종 신고 분류는 통관 담당자가 확정하며, 그 책임은 신고자에게 있습니다. 세율은 원산지증명(C/O)·법령 개정에 따라 달라질 수 있습니다. 관세표 품목명 원문(영어·베트남어)은 법적 기준이며 번역하지 않습니다.",
     thinking:"관세표에서 근거를 찾는 중",matching:"품목을 분석하는 중",
+    prog1:"품목을 살펴보고 있어요",prog2:"관세표에서 후보를 찾고 있어요",prog3:"거의 다 찾았어요",prog4:"이제 곧 결과가 나와요",
     confHi:"적합도 높음",confMid:"적합도 보통",confLo:"적합도 낮음 · 확인 필요",
     rateBase:"수입세율 (기본)",rateKR:"한-베 FTA",rateVAT:"수입 VAT",ratesAll:"전체 세율",seeReason:"판단 근거",altsTitle:"다른 후보",useThis:"이 코드로 보기",
     rlMFN:"기본 관세 (WTO)",rlBase:"협정 없을 때",rlVAT:"부가세 (VAT)",rlAK:"한·아세안 FTA",rlVJ:"일·베트남 협정",rlAT:"아세안 협정",
@@ -280,6 +281,7 @@ const I18N={
     stamp:"Data source · Vietnam Import-Export Tariff 2026",noteTitle:"Notes",
     disclaimer:"This is an assistive tool that proposes HS code candidates with evidence. The final declared classification is confirmed by the customs officer, who bears responsibility. Duty rates may vary with certificate of origin and legal amendments. Official tariff descriptions (English/Vietnamese) are the legal reference and are not translated.",
     thinking:"Finding evidence in the tariff",matching:"Analysing the item",
+    prog1:"Reading the item",prog2:"Searching the tariff",prog3:"Almost there",prog4:"Finishing up",
     confHi:"High fit",confMid:"Moderate fit",confLo:"Low fit · please check",
     rateBase:"Import duty (base)",rateKR:"Korea FTA",rateVAT:"Import VAT",ratesAll:"All duty rates",seeReason:"Reasoning",altsTitle:"Other candidates",useThis:"Use this code",
     rlMFN:"Base duty (WTO)",rlBase:"No agreement",rlVAT:"Import VAT",rlAK:"Korea-ASEAN FTA",rlVJ:"Japan-Vietnam EPA",rlAT:"ASEAN ATIGA",
@@ -297,6 +299,7 @@ const I18N={
     stamp:"Nguồn dữ liệu · Biểu thuế XNK Việt Nam 2026",noteTitle:"Lưu ý",
     disclaimer:"Đây là công cụ hỗ trợ, đề xuất mã HS kèm căn cứ. Việc phân loại khai báo cuối cùng do cán bộ hải quan xác nhận và chịu trách nhiệm. Thuế suất có thể thay đổi theo C/O và sửa đổi pháp luật. Mô tả nguyên văn (Anh/Việt) là căn cứ pháp lý và không được dịch.",
     thinking:"Đang tìm căn cứ trong biểu thuế",matching:"Đang phân tích mặt hàng",
+    prog1:"Đang đọc mặt hàng",prog2:"Đang tìm trong biểu thuế",prog3:"Sắp xong rồi",prog4:"Sắp có kết quả",
     confHi:"Độ phù hợp cao",confMid:"Độ phù hợp vừa",confLo:"Độ phù hợp thấp · cần kiểm tra",
     rateBase:"Thuế NK (cơ bản)",rateKR:"FTA Hàn-Việt",rateVAT:"VAT nhập khẩu",ratesAll:"Toàn bộ thuế suất",seeReason:"Lập luận",altsTitle:"Ứng viên khác",useThis:"Dùng mã này",
     rlMFN:"Thuế cơ bản (WTO)",rlBase:"Không hiệp định",rlVAT:"VAT nhập khẩu",rlAK:"FTA Hàn-ASEAN",rlVJ:"EPA Nhật-Việt",rlAT:"ATIGA",
@@ -406,7 +409,7 @@ async function aiKeywords(query){
   try{
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:400,thinking:{type:"disabled"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:400,
         messages:[{role:"user",content:`For HS tariff code search, convert this goods description into English keywords: material, product type, common synonyms (add Vietnamese term if obvious). Description: "${query}". Respond with ONLY a space-separated list of lowercase words, no punctuation, no explanation.`}]})
     });
     if(!resp.ok)return'';
@@ -447,12 +450,13 @@ Respond ONLY with minified JSON, no markdown:
   try{
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:1024,thinking:{type:"disabled"},
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1024,
         messages:[{role:"user",content:prompt}]})
     });
     if(!resp.ok)throw new Error('api');
     const data=await resp.json();
-    let txt=data.content.filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json|```/g,'').trim();
+    let txt=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    txt=txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1);   // 마크다운·잡음 제거하고 JSON만 추출
     const p=JSON.parse(txt);
     const byCode=Object.fromEntries(cand.map(r=>[r.c,r]));
     const best=byCode[p.best.code]?{rec:byCode[p.best.code],conf:p.best.confidence,reason:p.best.reason}:null;
@@ -472,6 +476,16 @@ Respond ONLY with minified JSON, no markdown:
 const statusEl=document.getElementById('status');
 const answerMount=document.getElementById('answerMount');
 const clarifyMount=document.getElementById('clarifyMount');
+
+/* 검색 중 진행 문구를 단계별로 바꿔 체감 대기시간을 줄임 */
+let progTimer=null;
+function startProgress(){
+  const keys=['prog1','prog2','prog3','prog4'];let i=0;
+  const show=()=>{statusEl.innerHTML=`<span class="dots"><i></i><i></i><i></i></span>${t(keys[i])}…`;};
+  show();
+  progTimer=setInterval(()=>{if(i<keys.length-1){i++;show();}},750);
+}
+function stopProgress(){if(progTimer){clearInterval(progTimer);progTimer=null;}statusEl.textContent='';}
 
 function fmtCode(c){return c.replace(/(\d{4})(\d{2})(\d{2})/,'$1.$2.$3');}
 function confWord(conf){
@@ -652,10 +666,10 @@ async function run(overrideText){
   document.getElementById('find').disabled=true;
   document.getElementById('composer').classList.add('busy');
   answerMount.innerHTML='';
-  statusEl.innerHTML=`<span class="dots"><i></i><i></i><i></i></span>${t('thinking')}…`;
+  startProgress();
 
   const res=await classify(query);
-  statusEl.textContent='';
+  stopProgress();
   document.getElementById('find').disabled=false;
   document.getElementById('composer').classList.remove('busy');
 
