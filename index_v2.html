@@ -400,7 +400,16 @@ function prefilter(query,limit){
     if(sc>0)out.push([sc,r]);
   }
   out.sort((a,b)=>b[0]-a[0]);
-  return out.slice(0,limit).map(x=>x[1]);
+  // 한 4자리 호(heading)가 후보를 독식하지 않도록 상한 — 예: "bolt"가 윤활유(3403) 설명과
+  // 매칭돼 진짜 볼트(7318)를 밀어내는 오분류 방지
+  const perHead={},picked=[];
+  for(const [sc,r] of out){
+    const h=r.c.slice(0,4);
+    perHead[h]=(perHead[h]||0)+1;
+    if(perHead[h]<=6)picked.push(r);
+    if(picked.length>=limit)break;
+  }
+  return picked;
 }
 
 /* 관세표는 영어·베트남어만 있어 순수 한국어 검색어는 substring 매칭이 안 됨.
@@ -410,7 +419,7 @@ async function aiKeywords(query){
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:400,
-        messages:[{role:"user",content:`For HS tariff code search, convert this goods description into English keywords: material, product type, common synonyms (add Vietnamese term if obvious). Description: "${query}". Respond with ONLY a space-separated list of lowercase words, no punctuation, no explanation.`}]})
+        messages:[{role:"user",content:`For HS tariff code search, list English keywords for this goods: its material, the general product category and its synonyms (e.g. a "hex bolt" is a fastener/screw/threaded article), plus the Vietnamese term if obvious. Description: "${query}". Respond with ONLY a space-separated list of lowercase words, no punctuation, no explanation.`}]})
     });
     if(!resp.ok)return'';
     const data=await resp.json();
@@ -420,11 +429,13 @@ async function aiKeywords(query){
 
 async function classify(query){
   let cand=prefilter(query,40);
-  if(cand.length<8){
+  // 인보이스식 짧은 품목명(≤6토큰)이나 후보가 약할 때는 AI 키워드로 보강.
+  // 짧은 품목명은 모호해서(예: 영어 "bolt") 후보가 엉뚱한 호로 쏠릴 수 있음.
+  if(cand.length<8||tokenize(query).length<=6){
     const kw=await aiKeywords(query);
     if(kw){
       const cand2=prefilter(query+' '+kw,40);
-      if(cand2.length>cand.length)cand=cand2;
+      if(cand2.length)cand=cand2;   // 키워드 보강 결과 우선(원문 토큰 포함한 상위집합)
     }
   }
   if(!cand.length)return{ok:false};
