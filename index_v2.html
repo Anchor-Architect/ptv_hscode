@@ -30,9 +30,9 @@
   /* header — minimal, Toss style */
   header{position:sticky;top:0;z-index:20;background:rgba(244,245,243,.85);backdrop-filter:blur(10px)}
   .head{display:flex;align-items:center;justify-content:space-between;padding:16px 0}
-  .lockup{display:flex;align-items:center;gap:9px}
-  .lockup .logo{height:34px;width:auto;display:block;mix-blend-mode:multiply}
-  @media (max-width:520px){.lockup .logo{height:28px}}
+  .lockup{display:flex;align-items:center;gap:9px;cursor:pointer}
+  .lockup .logo{height:46px;width:auto;display:block;mix-blend-mode:multiply}
+  @media (max-width:520px){.lockup .logo{height:36px}}
   .lang{display:flex;gap:2px;background:var(--line-2);border-radius:10px;padding:3px}
   .lang button{border:0;background:transparent;padding:6px 12px;cursor:pointer;color:var(--ink-3);font-weight:700;font-size:13px;border-radius:8px;font-family:var(--sans)}
   .lang button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.06)}
@@ -686,8 +686,23 @@ function renderClarify(clarify,query){
 /* ---------------- run ---------------- */
 document.getElementById('find').onclick=()=>run();
 document.getElementById('src').addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();run();}
+  // Enter=검색, Shift+Enter=줄바꿈
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();run();}
 });
+
+/* 로고 클릭 → 홈 화면으로 초기화 */
+function resetHome(){
+  stopProgress();
+  document.body.classList.remove('has-result');
+  document.getElementById('src').value='';
+  answerMount.innerHTML='';
+  clarifyMount.innerHTML='';
+  statusEl.textContent='';
+  CURRENT=null;
+  window.scrollTo({top:0,behavior:'smooth'});
+  document.getElementById('src').focus();
+}
+document.querySelector('.lockup').addEventListener('click',resetHome);
 
 async function run(overrideText){
   const ta=document.getElementById('src');
