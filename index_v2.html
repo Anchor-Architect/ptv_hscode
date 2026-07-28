@@ -304,6 +304,7 @@ const I18N={
     attach:"사진·PDF 첨부",dropHere:"여기에 놓으면 읽어드려요",reading:"서류를 읽고 있어요",
     fileOk:"에서 읽었어요 · 내용을 확인하고 검색하세요",fileNoText:"품목명을 찾지 못했어요. 직접 입력해 주세요.",
     fileTooBig:"파일이 너무 커요. 3MB 이하로 줄여서 다시 올려주세요.",fileBad:"이 파일은 읽을 수 없어요. 사진(JPG·PNG) 또는 PDF만 가능해요.",
+    filePages:"{n}장짜리 PDF네요. 품목표가 있는 한 장만 올리시면 더 빠르고 정확해요.",
     stamp:"데이터 기준 · 2026년 베트남 수출입 관세표",noteTitle:"이용 안내",
     disclaimer:"본 도구는 HS 코드 후보와 근거를 제시하는 보조 도구입니다. 최종 신고 분류는 통관 담당자가 확정하며, 그 책임은 신고자에게 있습니다. 세율은 원산지증명(C/O)·법령 개정에 따라 달라질 수 있습니다. 관세표 품목명 원문(영어·베트남어)은 법적 기준이며 번역하지 않습니다.",
     thinking:"관세표에서 근거를 찾는 중",matching:"품목을 분석하는 중",
@@ -326,6 +327,7 @@ const I18N={
     attach:"Attach photo or PDF",dropHere:"Drop it here and we'll read it",reading:"Reading the document",
     fileOk:"— read from this file · check it, then search",fileNoText:"Couldn't find a goods description. Please type it in.",
     fileTooBig:"File is too large. Please upload under 3MB.",fileBad:"Can't read this file. Only photos (JPG/PNG) or PDF.",
+    filePages:"This PDF has {n} pages. Upload just the page with the goods list — it's faster and more accurate.",
     stamp:"Data source · Vietnam Import-Export Tariff 2026",noteTitle:"Notes",
     disclaimer:"This is an assistive tool that proposes HS code candidates with evidence. The final declared classification is confirmed by the customs officer, who bears responsibility. Duty rates may vary with certificate of origin and legal amendments. Official tariff descriptions (English/Vietnamese) are the legal reference and are not translated.",
     thinking:"Finding evidence in the tariff",matching:"Analysing the item",
@@ -348,6 +350,7 @@ const I18N={
     attach:"Đính kèm ảnh hoặc PDF",dropHere:"Thả vào đây để đọc",reading:"Đang đọc chứng từ",
     fileOk:"— đã đọc từ tệp này · kiểm tra rồi tìm",fileNoText:"Không tìm thấy mô tả hàng hóa. Vui lòng nhập tay.",
     fileTooBig:"Tệp quá lớn. Vui lòng tải lên dưới 3MB.",fileBad:"Không đọc được tệp này. Chỉ ảnh (JPG/PNG) hoặc PDF.",
+    filePages:"PDF này có {n} trang. Hãy tải lên đúng trang có danh mục hàng — nhanh và chính xác hơn.",
     stamp:"Nguồn dữ liệu · Biểu thuế XNK Việt Nam 2026",noteTitle:"Lưu ý",
     disclaimer:"Đây là công cụ hỗ trợ, đề xuất mã HS kèm căn cứ. Việc phân loại khai báo cuối cùng do cán bộ hải quan xác nhận và chịu trách nhiệm. Thuế suất có thể thay đổi theo C/O và sửa đổi pháp luật. Mô tả nguyên văn (Anh/Việt) là căn cứ pháp lý và không được dịch.",
     thinking:"Đang tìm căn cứ trong biểu thuế",matching:"Đang phân tích mặt hàng",
@@ -804,7 +807,25 @@ async function run(overrideText){
 /* ---------------- 사진·PDF 첨부 → 품목명 추출 ----------------
    OCR은 틀릴 수 있으므로 추출 결과를 검색창에 채워 사용자가 확인·수정한 뒤 검색하게 함. */
 const MAX_UPLOAD=3*1024*1024;      // Vercel 요청 본문(4.5MB) - base64 33% 증가분 감안
+const PDF_PAGE_LIMIT=5;            // PDF는 장수만큼 과금·지연됨. 품목표는 보통 앞장에 있음
 const fileNote=document.getElementById('fileNote');
+
+/* PDF 장수 세기 — 원본 바이트에서 /Type /Page 개수를 센다(라이브러리 없이) */
+function countPdfPages(file){
+  return new Promise(resolve=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      try{
+        const s=new TextDecoder('latin1').decode(fr.result);
+        const cnt=(s.match(/\/Type\s*\/Page[^s]/g)||[]).length;
+        const declared=s.match(/\/Count\s+(\d+)/);
+        resolve(Math.max(cnt, declared?+declared[1]:0) || 1);
+      }catch(e){resolve(1);}
+    };
+    fr.onerror=()=>resolve(1);
+    fr.readAsArrayBuffer(file);
+  });
+}
 
 function showFileNote(kind,msg){
   fileNote.innerHTML=`<div class="fnote ${kind}">
@@ -821,13 +842,25 @@ function shrinkImage(file,maxSide=1600){
     img.onload=()=>{
       URL.revokeObjectURL(url);
       const scale=Math.min(1,maxSide/Math.max(img.width,img.height));
+      const w=Math.round(img.width*scale),h=Math.round(img.height*scale);
+      // 큰 사진을 한 번에 줄이면 작은 글씨가 뭉개져 오독을 유발한다(재질 오독 실측).
+      // 절반씩 단계적으로 줄이면 같은 해상도에서도 글자가 훨씬 또렷하게 남는다.
+      let cur=img,cw=img.width,ch=img.height;
+      while(cw/2>w){
+        const t=document.createElement('canvas');
+        t.width=Math.round(cw/2);t.height=Math.round(ch/2);
+        const tx=t.getContext('2d');tx.imageSmoothingQuality='high';
+        tx.fillStyle='#fff';tx.fillRect(0,0,t.width,t.height);
+        tx.drawImage(cur,0,0,t.width,t.height);
+        cur=t;cw=t.width;ch=t.height;
+      }
       const c=document.createElement('canvas');
-      c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
-      const ctx=c.getContext('2d');
+      c.width=w;c.height=h;
+      const ctx=c.getContext('2d');ctx.imageSmoothingQuality='high';
       // JPEG는 투명도가 없어 투명 배경이 검게 변함 → 흰 배경을 먼저 깔아야 글씨가 보임
-      ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
-      ctx.drawImage(img,0,0,c.width,c.height);
-      resolve({data:c.toDataURL('image/jpeg',0.85).split(',')[1],media:'image/jpeg'});
+      ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+      ctx.drawImage(cur,0,0,w,h);
+      resolve({data:c.toDataURL('image/jpeg',0.92).split(',')[1],media:'image/jpeg'});
     };
     img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('image'));};
     img.src=url;
@@ -854,30 +887,47 @@ async function handleFile(file){
   statusEl.innerHTML=`<span class="dots"><i></i><i></i><i></i></span>${t('reading')}…`;
 
   try{
-    const src=isImage?await shrinkImage(file):await readAsBase64(file);
-    if(src.data.length>MAX_UPLOAD*1.34){showFileNote('err',t('fileTooBig'));return;}
+    if(isPDF){
+      // PDF는 장수만큼 과금·지연되므로 과도하게 긴 문서는 막는다(품목표는 보통 앞장에 있음)
+      const pages=await countPdfPages(file);
+      if(pages>PDF_PAGE_LIMIT){showFileNote('err',t('filePages').replace('{n}',pages));return;}
+    }
 
-    const block=isImage
-      ? {type:'image',source:{type:'base64',media_type:src.media,data:src.data}}
-      : {type:'document',source:{type:'base64',media_type:'application/pdf',data:src.data}};
-    const ask="This is a trade document (invoice, packing list, product photo or spec sheet). Identify the goods being shipped and write ONE English goods description suitable for HS tariff classification: product type, material, and form/processing if stated. If several line items appear, use only the first/main one. Reply with the description ONLY — no labels, no quotes, no explanation. If no goods can be identified, reply exactly: NONE";
+    // 문서를 '읽지 않고' 일반 지식으로 의역하면 재질이 뒤바뀐다(polycarbonate→polyurethane 실측).
+    // 재질·품명은 인쇄된 문구 그대로 옮기라고 못박는다 — 재질은 HS 코드를 바꾸는 결정적 정보.
+    const ask="Read this trade document (invoice, packing list, product photo or spec sheet) and report the goods.\nCopy the wording that is actually printed — especially the material and the product name. Transcribe them exactly; never substitute a similar-sounding or more common term, and never guess from general knowledge.\nIf several line items appear, use only the first one.\nReply with ONE English goods description and nothing else. If no goods are identifiable, reply exactly: NONE";
 
-    const resp=await fetch("/api/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      // 서류 판독은 sonnet-5 사용 — haiku는 이미지 속 한글을 못 읽고 엉뚱한 품목을 지어냄(검증됨).
-      // 오독하면 이후 분류가 통째로 틀리므로 이 단계는 정확도를 우선한다.
-      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:400,
-        messages:[{role:"user",content:[block,{type:'text',text:ask}]}]})
-    });
-    if(!resp.ok)throw new Error('api');
-    const data=await resp.json();
-    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
+    // 이미지 토큰 비용은 파일 크기가 아니라 픽셀 수(≈가로×세로÷750)로 정해진다.
+    // 그래서 낮은 해상도로 먼저 시도하고, 못 읽었을 때만 크게 다시 보낸다(적응형).
+    // 실측: 1000px 893토큰 / 1800px 약 2배. 대부분 1회로 끝나 평균 비용이 크게 줄어든다.
+    const tries=isImage?[1000,1800]:[0];
+    let text='';
+    for(let i=0;i<tries.length;i++){
+      const src=isImage?await shrinkImage(file,tries[i]):await readAsBase64(file);
+      if(src.data.length>MAX_UPLOAD*1.34){showFileNote('err',t('fileTooBig'));return;}
+      const block=isImage
+        ? {type:'image',source:{type:'base64',media_type:src.media,data:src.data}}
+        : {type:'document',source:{type:'base64',media_type:'application/pdf',data:src.data}};
 
-    // 품목을 못 찾으면 NONE 이 와야 하지만, 모델이 설명 문장으로 답할 때가 있어 방어한다.
-    // (그대로 두면 "goods cannot be identified" 같은 문장이 검색창에 들어감)
-    const notFound=!text||/^NONE\b/i.test(text)||text.length>220
-      ||/cannot be identified|not available|unable to|no goods|I (can'?t|cannot)/i.test(text);
-    if(notFound){showFileNote('err',t('fileNoText'));return;}
+      const resp=await fetch("/api/messages",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        // 판독은 sonnet-5 — haiku는 이미지 속 한글을 못 읽고 품목을 지어낸다(검증됨).
+        // 판독이 틀리면 이후 분류가 통째로 무의미해지므로 이 단계는 정확도를 우선.
+        body:JSON.stringify({model:"claude-sonnet-5",max_tokens:150,
+          messages:[{role:"user",content:[block,{type:'text',text:ask}]}]})
+      });
+      if(!resp.ok)throw new Error('api');
+      const data=await resp.json();
+      const got=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
+
+      // 품목을 못 찾으면 NONE 이 와야 하지만 설명 문장으로 답할 때가 있어 방어한다.
+      // (그대로 두면 "goods cannot be identified" 같은 문장이 검색창에 들어감)
+      const bad=!got||/^NONE\b/i.test(got)||got.length>220
+        ||/cannot be identified|not available|unable to|no goods|I (can'?t|cannot)/i.test(got);
+      if(!bad){text=got;break;}
+    }
+
+    if(!text){showFileNote('err',t('fileNoText'));return;}
     const ta=document.getElementById('src');
     ta.value=text;ta.focus();
     showFileNote('ok',`${file.name} ${t('fileOk')}`);
