@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>PTV HS Code · 정확도 회귀 테스트</title>
+<style>
+  body{font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;background:#f4f5f3;color:#191f28;margin:0;padding:24px}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 6px}
+  .sub{color:#4e5968;font-size:14px;margin:0 0 18px;line-height:1.6}
+  button{font-family:inherit;font-size:15px;font-weight:700;background:#2563eb;color:#fff;border:0;
+    border-radius:10px;padding:12px 22px;cursor:pointer}
+  button:disabled{opacity:.5;cursor:default}
+  .bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .score{font-size:15px;font-weight:700}
+  .score .ok{color:#0f8a5f}.score .no{color:#c0392b}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;font-size:13.5px}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid #eceef0;vertical-align:top}
+  th{background:#f7f8f9;font-size:12px;color:#4e5968}
+  tr.pass td:first-child{border-left:3px solid #0f8a5f}
+  tr.fail td:first-child{border-left:3px solid #c0392b}
+  tr.fail{background:#fdf6f5}
+  code{font-family:'SF Mono',Menlo,monospace;font-size:12.5px}
+  .muted{color:#8b95a1}
+  .note{background:#fff;border-radius:12px;padding:14px 16px;font-size:13px;color:#4e5968;line-height:1.7;margin-top:16px}
+  iframe{width:0;height:0;border:0;position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>정확도 회귀 테스트</h1>
+  <p class="sub">
+    검색 로직·프롬프트·데이터를 바꾼 뒤 이 페이지를 실행해, 정확도가 떨어지지 않았는지 확인합니다.<br>
+    HS 분류는 해석 여지가 있어 <b>4자리 호(heading)</b> 기준으로 채점하며, 정당한 대안이 있는 품목은 복수 정답을 인정합니다.
+  </p>
+  <div class="bar">
+    <button id="run">테스트 실행</button>
+    <span id="score" class="score muted">대기 중</span>
+    <span id="prog" class="muted"></span>
+  </div>
+  <table id="tbl">
+    <thead><tr><th style="width:20%">검색어</th><th style="width:12%">기대 호</th><th style="width:13%">결과</th>
+      <th style="width:8%">적합도</th><th>관세표 경로</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="note">
+    <b>채점 방식</b> · 결과 코드의 앞 4자리가 기대 호 중 하나와 일치하면 통과입니다.
+    8자리 세부 호는 관세표 원본에 6자리 소호 설명이 없어 구분이 어려운 경우가 있어 채점에서 제외합니다.<br>
+    <b>테스트 추가</b> · 이 파일의 <code>CASES</code> 배열에 <code>{q:"검색어", expect:["1234"]}</code> 형태로 추가하세요.
+  </div>
+</div>
+
+<iframe id="app" src="../index_v2.html"></iframe>
+
+<script>
+/* 실제 앱을 iframe 으로 띄워 UI 흐름 그대로 검증한다(로직 복제 없이 회귀를 잡기 위함). */
+const CASES = [
+  {q:"스테인리스 육각 볼트 M8",              expect:["7318"]},
+  {q:"stainless hex bolt M8",                expect:["7318"]},
+  {q:"Men's knitted pullover, 100% polyester", expect:["6110"]},
+  {q:"남성 면 티셔츠 반팔",                   expect:["6109"]},
+  {q:"áo thun cotton nam",                   expect:["6109"]},
+  {q:"노트북용 리튬이온 배터리팩",             expect:["8507"]},
+  {q:"커피 원두 볶은 것",                     expect:["0901"]},
+  {q:"폴리카보네이트 안전모",                 expect:["6506"]},
+  {q:"냉동 새우 껍질 제거",                   expect:["0306","1605"]},
+  {q:"자동차용 브레이크 패드",                expect:["8708","6813"]},
+  {q:"플라스틱 물병",                        expect:["3924","3923"]},
+  {q:"천연고무 승용차용 타이어",              expect:["4011"]},
+  {q:"포틀랜드 시멘트",                      expect:["2523"]},
+  {q:"밀가루",                              expect:["1101"]},
+  {q:"백설탕",                              expect:["1701"]},
+  {q:"LED 전구",                            expect:["8539","8541","8543"]},
+  {q:"골판지 포장상자",                      expect:["4819"]},
+  {q:"유리병 음료용",                        expect:["7010"]},
+  {q:"알루미늄 호일 주방용",                  expect:["7607"]},
+  {q:"소가죽 지갑",                          expect:["4202"]},
+  {q:"세라믹 바닥 타일",                     expect:["6907"]},
+  {q:"구리 절연 전선",                       expect:["8544"]},
+  {q:"가정용 에어컨",                        expect:["8415"]},
+  {q:"백미 쌀",                             expect:["1006"]},
+  {q:"목재 사무용 의자",                     expect:["9401"]},
+];
+
+const $ = s => document.querySelector(s);
+const frame = $('#app');
+
+function appWin(){ return frame.contentWindow; }
+
+async function waitReady(){
+  // 앱은 관세표를 `let DATA` 로 담는데 let 은 window 속성이 아니라 부모에서 직접 못 본다.
+  // iframe 스코프에서 평가해 로딩 완료를 확인한다.
+  for (let i=0;i<160;i++){
+    try{
+      const w=appWin();
+      if(w && typeof w.run==='function' && w.eval('typeof DATA!=="undefined" && DATA.length>0')) return true;
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,250));
+  }
+  throw new Error('앱 로딩 실패');
+}
+
+async function runOne(c){
+  const w = appWin(), d = w.document;
+  d.body.classList.remove('has-result');
+  d.getElementById('answerMount').innerHTML='';
+  d.getElementById('src').value = c.q;
+  const t0 = performance.now();
+  d.getElementById('find').click();
+  await new Promise(res=>{
+    const iv=setInterval(()=>{
+      if(d.querySelector('.answer .code') || performance.now()-t0>25000){ clearInterval(iv); res(); }
+    },100);
+  });
+  const codeEl = d.querySelector('.answer .code');
+  const code = codeEl ? codeEl.innerText.trim() : '';
+  const digits = code.replace(/\./g,'');
+  const conf = (d.querySelector('.answer .conf')||{}).innerText || '';
+  const path = ((d.querySelector('.answer .path')||{}).innerText||'').slice(0,90);
+  return { code: code||'(없음)', pass: c.expect.some(e=>digits.startsWith(e)),
+           conf: conf.replace(/\s+/g,' ').trim(), path, ms: Math.round(performance.now()-t0) };
+}
+
+$('#run').onclick = async () => {
+  const btn=$('#run'); btn.disabled=true;
+  const tb=$('#tbl tbody'); tb.innerHTML='';
+  $('#score').textContent='앱 로딩 중…'; $('#score').className='score muted';
+  try{ await waitReady(); }catch(e){ $('#score').textContent='앱 로딩 실패'; btn.disabled=false; return; }
+
+  let ok=0;
+  for (let i=0;i<CASES.length;i++){
+    $('#prog').textContent = `${i+1} / ${CASES.length} 진행 중…`;
+    const c = CASES[i];
+    let r;
+    try{ r = await runOne(c); }
+    catch(e){ r = {code:'ERROR', pass:false, conf:'', path:String(e.message), ms:0}; }
+    if(r.pass) ok++;
+    const tr=document.createElement('tr');
+    tr.className = r.pass ? 'pass' : 'fail';
+    tr.innerHTML = `<td>${c.q}</td><td><code>${c.expect.join(' / ')}</code></td>
+      <td><code>${r.code}</code> ${r.pass?'✓':'✗'}</td>
+      <td class="muted">${r.conf}</td>
+      <td class="muted">${r.path}</td>`;
+    tb.appendChild(tr);
+    const pct=(ok/(i+1)*100).toFixed(0);
+    $('#score').innerHTML = `<span class="${ok===i+1?'ok':'no'}">${ok} / ${i+1} 통과 (${pct}%)</span>`;
+  }
+  $('#prog').textContent='완료';
+  $('#score').innerHTML = `<span class="${ok===CASES.length?'ok':'no'}">${ok} / ${CASES.length} 통과 (${(ok/CASES.length*100).toFixed(0)}%)</span>`;
+  btn.disabled=false;
+};
+</script>
+</body>
+</html>
