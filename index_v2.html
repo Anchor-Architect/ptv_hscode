@@ -435,7 +435,12 @@ const SYN={
   '볼트':'bolt bu lông','bu lông':'bolt','너트':'nut đai ốc','나사':'screw vít',
   '스테인리스':'stainless inox','인조섬유':'man-made fibres synthetic','폴리에스터':'polyester man-made fibres',
   '면':'cotton','니트':'knitted','배터리':'battery pin','리튬':'lithium',
-  '새우':'shrimp prawn tôm','냉동':'frozen đông lạnh'
+  '새우':'shrimp prawn tôm','냉동':'frozen đông lạnh',
+  // 일상 영어 → 관세표 표기. 관세표는 "prawns"를 쓰는데 서류엔 "shrimp"로 적히는 식의 간극을 메움
+  'shrimp':'prawn tôm crustacean','prawn':'shrimp tôm crustacean',
+  'bolt':'screw threaded fastener bu lông','screw':'bolt threaded vít',
+  'helmet':'headgear safety','t-shirt':'t-shirt singlet áo phông',
+  'pullover':'jersey pullover cardigan','battery':'accumulator pin'
 };
 function expandSynonyms(s){
   let x=' '+s.toLowerCase()+' ';
@@ -445,16 +450,40 @@ function expandSynonyms(s){
 function tokenize(s){
   return expandSynonyms(s).replace(/[^a-z0-9가-힣%]+/g,' ').split(/\s+/).filter(w=>w.length>1);
 }
+/* 토큰별 매칭기. 부분 문자열 매칭은 "hex"가 "cyclohexane"에 걸리는 등 오탐이 많아
+   단어 경계를 본다. 4자 이상은 단어 앞부분 일치(bolt→bolts), 3자 이하는 완전 일치. */
+function makeMatcher(w){
+  if(/[^\x00-\x7F]/.test(w))return hay=>hay.includes(w);   // 한글·베트남어는 경계 판정이 어려워 그대로
+  const esc=w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const re=w.length>=4?new RegExp('\\b'+esc,'i'):new RegExp('\\b'+esc+'\\b','i');
+  return hay=>re.test(hay);
+}
 function prefilter(query,limit){
   const toks=tokenize(query);
   if(!toks.length)return[];
-  const out=[];
+  const matchers=toks.map(makeMatcher);
+
+  // 1차: 항목별로 맞는 토큰을 모으며 토큰 출현 빈도(df)도 함께 센다.
+  const hits=[],df={};
   for(const r of DATA){
     const hay=(r.e+' '+r.v).toLowerCase();
-    let sc=0;
-    for(const w of toks){if(hay.includes(w))sc+=(w.length>3?2:1);}
-    if(sc>0)out.push([sc,r]);
+    let m=null;
+    for(let i=0;i<toks.length;i++){
+      if(matchers[i](hay)){(m||(m=[])).push(toks[i]);df[toks[i]]=(df[toks[i]]||0)+1;}
+    }
+    if(m)hits.push([m,r]);
   }
+  if(!hits.length)return[];
+
+  // 2차: 드문 단어일수록 크게(IDF 제곱). 관세표 상투어("frozen","uncooked")가 품목을 특정하는
+  // 단어("shrimp")를 눌러 냉동감자가 새우보다 높게 잡히던 문제를 해결한다.
+  const N=DATA.length,idf={};
+  for(const w of toks)idf[w]=df[w]?Math.log(N/df[w]):0;
+  const out=hits.map(([m,r])=>{
+    let sc=0;
+    for(const w of m)sc+=idf[w]*idf[w];
+    return [sc,r];
+  });
   out.sort((a,b)=>b[0]-a[0]);
   // 한 4자리 호(heading)가 후보를 독식하지 않도록 상한 — 예: "bolt"가 윤활유(3403) 설명과
   // 매칭돼 진짜 볼트(7318)를 밀어내는 오분류 방지
@@ -835,14 +864,20 @@ async function handleFile(file){
 
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:300,
+      // 서류 판독은 sonnet-5 사용 — haiku는 이미지 속 한글을 못 읽고 엉뚱한 품목을 지어냄(검증됨).
+      // 오독하면 이후 분류가 통째로 틀리므로 이 단계는 정확도를 우선한다.
+      body:JSON.stringify({model:"claude-sonnet-5",max_tokens:400,
         messages:[{role:"user",content:[block,{type:'text',text:ask}]}]})
     });
     if(!resp.ok)throw new Error('api');
     const data=await resp.json();
     const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join(' ').trim();
 
-    if(!text||/^NONE\b/i.test(text)){showFileNote('err',t('fileNoText'));return;}
+    // 품목을 못 찾으면 NONE 이 와야 하지만, 모델이 설명 문장으로 답할 때가 있어 방어한다.
+    // (그대로 두면 "goods cannot be identified" 같은 문장이 검색창에 들어감)
+    const notFound=!text||/^NONE\b/i.test(text)||text.length>220
+      ||/cannot be identified|not available|unable to|no goods|I (can'?t|cannot)/i.test(text);
+    if(notFound){showFileNote('err',t('fileNoText'));return;}
     const ta=document.getElementById('src');
     ta.value=text;ta.focus();
     showFileNote('ok',`${file.name} ${t('fileOk')}`);
