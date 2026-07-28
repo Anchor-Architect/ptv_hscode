@@ -132,6 +132,20 @@
   .twinwarn{margin-top:14px;padding:12px 14px;background:var(--warn-bg);border-radius:11px;font-size:13.5px;
     color:var(--warn);line-height:1.55;display:flex;gap:8px;align-items:flex-start}
 
+  /* HS 코드 조회 목록 */
+  .codehead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .codehead-h{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--ink)}
+  .codehead-sub{font-size:14px;color:var(--ink-3)}
+  .codelist{display:flex;flex-direction:column;gap:6px}
+  .coderow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font-family:var(--sans);
+    background:var(--line-2);border:1px solid transparent;border-radius:11px;padding:12px 14px;cursor:pointer;transition:.12s}
+  .coderow:hover{background:var(--card);border-color:var(--teal)}
+  .coderow .crc{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);flex:0 0 auto;min-width:110px}
+  .coderow .crd{font-size:14px;color:var(--ink-2);flex:1;line-height:1.4}
+  .coderow .cra{color:var(--ink-3);flex:0 0 auto}
+  .coderow:hover .cra{color:var(--teal)}
+  .codemore{font-size:13px;color:var(--ink-3);text-align:center;padding:10px 0 2px}
+
   /* two hero rate cards */
   .rate2{display:flex;gap:10px;padding:0 22px 4px}
   .rcard{flex:1;min-width:0;background:var(--line-2);border-radius:14px;padding:13px 15px}
@@ -316,6 +330,8 @@ const I18N={
     twinWarn:"관세표에 이 코드와 <b>설명이 똑같은 세부 코드가 {n}개</b> 있어요. 앞 6자리까지는 이 분류가 맞지만, 마지막 2자리는 통관 담당자와 확인하세요.",
     rateBase:"수입세율 (기본)",rateKR:"한-베 FTA",rateVAT:"수입 VAT",ratesAll:"전체 세율",seeReason:"판단 근거",altsTitle:"다른 후보",useThis:"이 코드로 보기",
     rawValue:"관세표 원문",
+    codeListSub:"이 호에 속한 세부 코드 {n}개 · 눌러서 상세 보기",codeMore:"외 {n}개 더 있어요. 코드를 더 자세히 입력하면 좁혀져요.",
+    codeMiss:"{c} — 관세표에 없는 코드예요.",codeNear:"가장 가까운 코드({c})예요:",codeNoNear:"비슷한 코드도 찾지 못했어요. 코드를 다시 확인해 주세요.",
     refLabel:"참조용",refShort:"본 HS 코드는 참조용입니다. 정확한 원재료·HS 해석·사용 목적에 따라 코드가 달라질 수 있어요.",
     rateNote:"세율은 2026년 관세표 기준이며, 6개월~1년 주기로 갱신될 수 있어요. 신고 시점에 다시 확인하세요.",
     copy:"코드 복사",copied:"복사됐어요",save:"저장",confirmed:"저장됨",
@@ -339,6 +355,8 @@ const I18N={
     twinWarn:"The tariff has <b>{n} codes with wording identical</b> to this one. The classification holds to the first 6 digits, but confirm the last 2 with your customs officer.",
     rateBase:"Import duty (base)",rateKR:"Korea FTA",rateVAT:"Import VAT",ratesAll:"All duty rates",seeReason:"Reasoning",altsTitle:"Other candidates",useThis:"Use this code",
     rawValue:"Tariff original",
+    codeListSub:"{n} detailed codes under this heading · tap for details",codeMore:"and {n} more. Type more digits to narrow it down.",
+    codeMiss:"{c} — not found in the tariff.",codeNear:"Closest codes ({c}):",codeNoNear:"No similar code found. Please check the code again.",
     refLabel:"Reference only",refShort:"This HS code is for reference. The exact raw material, HS interpretation and intended use may change the code.",
     rateNote:"Rates are based on the 2026 tariff and may be revised every 6–12 months. Re-check at the time of filing.",
     copy:"Copy code",copied:"Copied",save:"Save",confirmed:"Saved",
@@ -362,6 +380,8 @@ const I18N={
     twinWarn:"Biểu thuế có <b>{n} mã có mô tả giống hệt</b> mã này. Phân loại đúng đến 6 số đầu, nhưng 2 số cuối cần xác nhận với cán bộ hải quan.",
     rateBase:"Thuế NK (cơ bản)",rateKR:"FTA Hàn-Việt",rateVAT:"VAT nhập khẩu",ratesAll:"Toàn bộ thuế suất",seeReason:"Lập luận",altsTitle:"Ứng viên khác",useThis:"Dùng mã này",
     rawValue:"Nguyên văn biểu thuế",
+    codeListSub:"{n} mã chi tiết thuộc nhóm này · bấm để xem",codeMore:"và {n} mã nữa. Nhập thêm chữ số để thu hẹp.",
+    codeMiss:"{c} — không có trong biểu thuế.",codeNear:"Mã gần nhất ({c}):",codeNoNear:"Không tìm thấy mã tương tự. Vui lòng kiểm tra lại mã.",
     refLabel:"Chỉ tham khảo",refShort:"Mã HS này chỉ để tham khảo. Nguyên liệu, cách diễn giải và mục đích sử dụng có thể làm thay đổi mã.",
     rateNote:"Thuế suất theo biểu thuế 2026 và có thể được cập nhật mỗi 6–12 tháng. Hãy kiểm tra lại tại thời điểm khai báo.",
     copy:"Sao chép mã",copied:"Đã chép",save:"Lưu",confirmed:"Đã lưu",
@@ -649,6 +669,10 @@ function startProgress(){
 function stopProgress(){if(progTimer){clearInterval(progTimer);progTimer=null;}statusEl.textContent='';}
 
 function fmtCode(c){return c.replace(/(\d{4})(\d{2})(\d{2})/,'$1.$2.$3');}
+/* 부분 코드도 4·6·8자리 경계에서 점을 찍는다 ("6110"→6110, "611030"→6110.30) */
+function fmtPartial(digits){
+  return digits.replace(/^(\d{4})(\d{0,2})(\d{0,2}).*$/,(m,a,b,c)=>a+(b?'.'+b:'')+(c?'.'+c:''));
+}
 /* 모델의 자기 보고 신뢰도는 '후보들이 서로 구별되지 않는다'는 사실을 모른다.
    설명이 동일한 형제 코드가 있으면 8자리 선택은 임의이므로 적합도를 보통 이하로 낮춘다. */
 function confWord(conf,twins){
@@ -721,7 +745,7 @@ function renderAnswer(res,query){
       <div class="primary-top">
         <div class="code-line">
           <span class="code">${fmtCode(b.rec.c)}</span>
-          <span class="conf ${cw.cls}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="${cw.ic}" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>${cw.txt}</span>
+          ${res.byCode?'':`<span class="conf ${cw.cls}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="${cw.ic}" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>${cw.txt}</span>`}
           <span class="refchip" title="${t('refShort')}">${t('refLabel')}</span>
         </div>
         ${pathHTML(b.rec)}
@@ -741,11 +765,11 @@ function renderAnswer(res,query){
         </button>
       </div>
 
-      <div class="detail3">
-        <div class="dcol">
+      <div class="detail3${res.byCode?' solo':''}">
+        ${res.byCode?'':`<div class="dcol">
           <h4>${t('seeReason')}</h4>
           <div class="why-text">${b.reason||'—'}</div>
-        </div>
+        </div>`}
         <div class="dcol">
           <h4>${t('ratesAll')}</h4>
           <div class="allrates">${allRatesHTML(b.rec)}</div>
@@ -830,6 +854,44 @@ function renderClarify(clarify,query){
   });
 }
 
+/* ---------------- HS 코드 조회 렌더 ---------------- */
+function codeRowHTML(rec){
+  const leaf=rec.e.split(' > ').slice(-1)[0];
+  return `<button class="coderow" data-code="${rec.c}">
+    <span class="crc">${fmtCode(rec.c)}</span>
+    <span class="crd">${leaf}</span>
+    <svg class="cra" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>`;
+}
+function wireCodeRows(){
+  answerMount.querySelectorAll('.coderow[data-code]').forEach(el=>{
+    el.onclick=()=>{const c=el.dataset.code;document.getElementById('src').value=fmtCode(c);runCodeLookup(c,c);};
+  });
+}
+function renderCodeList(digits,family){
+  const shown=family.slice(0,60);
+  answerMount.innerHTML=`
+   <div class="answer"><div class="primary"><div class="primary-top">
+     <div class="codehead">
+       <span class="codehead-h">${fmtPartial(digits)}</span>
+       <span class="codehead-sub">${t('codeListSub').replace('{n}',family.length)}</span>
+     </div>
+     <div class="codelist">${shown.map(codeRowHTML).join('')}</div>
+     ${family.length>shown.length?`<div class="codemore">${t('codeMore').replace('{n}',family.length-shown.length)}</div>`:''}
+   </div></div></div>`;
+  wireCodeRows();
+}
+function renderCodeMiss(digits,pre,hit){
+  answerMount.innerHTML=`
+   <div class="answer"><div class="primary"><div class="primary-top">
+     <div class="path"><span class="leaf">${t('codeMiss').replace('{c}',fmtPartial(digits))}</span></div>
+     ${hit.length?`<div class="why-text" style="margin:12px 0 10px">${t('codeNear').replace('{c}',fmtPartial(pre))}</div>
+       <div class="codelist">${hit.map(codeRowHTML).join('')}</div>`
+       :`<div class="why-text" style="margin-top:12px">${t('codeNoNear')}</div>`}
+   </div></div></div>`;
+  wireCodeRows();
+}
+
 /* ---------------- run ---------------- */
 document.getElementById('find').onclick=()=>run();
 document.getElementById('src').addEventListener('keydown',e=>{
@@ -852,6 +914,52 @@ function resetHome(){
 }
 document.querySelector('.lockup').addEventListener('click',resetHome);
 
+/* 입력이 HS 코드인가? 숫자와 점만으로 이뤄지고 숫자가 4자리 이상이면 코드로 본다.
+   ("6110", "6110.30", "611030", "6110.30.00" 모두 코드) */
+function asHsCode(q){
+  const digits=q.replace(/[.\s]/g,'');
+  if(/^\d{4,}$/.test(digits)&&/^[\d.\s]+$/.test(q))return digits;
+  return null;
+}
+/* 코드 접두로 데이터에서 조회. 완전코드면 [정확], 부분코드면 그 호의 세부 코드 목록 */
+function lookupByCode(digits){
+  const exact=DATA.find(r=>r.c===digits);
+  const family=DATA.filter(r=>r.c.startsWith(digits));
+  return {exact,family};
+}
+/* 가장 가까운 코드 찾기 — 없는 코드를 넣었을 때 안내용(같은 접두 최대) */
+function nearestCodes(digits){
+  for(let len=digits.length-1;len>=2;len--){
+    const pre=digits.slice(0,len);
+    const hit=DATA.filter(r=>r.c.startsWith(pre));
+    if(hit.length)return{pre,hit:hit.slice(0,8)};
+  }
+  return{pre:'',hit:[]};
+}
+
+/* HS 코드 입력 처리 — 서버 호출 없이 즉시 목록/상세를 보여준다 */
+function runCodeLookup(digits,query){
+  const {exact,family}=lookupByCode(digits);
+  document.body.classList.add('has-result');
+
+  // 완전한 8자리 코드 → 기존 결과 카드로 바로 상세
+  if(exact){
+    renderAnswer({ok:true,best:{rec:exact,conf:100,reason:'',twins:countTwins(exact)},alts:[],byCode:true},query);
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  // 부분 코드 → 그 호의 세부 코드 목록
+  if(family.length){
+    renderCodeList(digits,family);
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  // 없는 코드 → 가장 가까운 코드 안내
+  const {pre,hit}=nearestCodes(digits);
+  renderCodeMiss(digits,pre,hit);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
 async function run(overrideText){
   const ta=document.getElementById('src');
   const query=(overrideText||ta.value).trim();
@@ -859,6 +967,10 @@ async function run(overrideText){
   clarifyMount.innerHTML='';
   if(!query){statusEl.textContent='';return;}
   if(!DATA.length){statusEl.innerHTML='<span class="dots"><i></i><i></i><i></i></span>'+t('matching');return;}
+
+  // 입력이 HS 코드면 AI 검색 대신 데이터에서 바로 조회(즉시·무료)
+  const code=asHsCode(query);
+  if(code){answerMount.innerHTML='';statusEl.textContent='';runCodeLookup(code,query);return;}
 
   document.getElementById('find').disabled=true;
   document.getElementById('composer').classList.add('busy');
