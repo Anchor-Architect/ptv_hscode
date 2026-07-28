@@ -1,0 +1,11 @@
+{
+ "countries": [
+  {
+   "country": "VN",
+   "name_ko": "베트남",
+   "name_en": "Vietnam",
+   "flag": "🇻🇳",
+   "version": "2026"
+  }
+ ]
+}

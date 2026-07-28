@@ -1,0 +1,64 @@
+{
+  "country": "VN",
+  "name_ko": "베트남",
+  "name_en": "Vietnam",
+  "flag": "🇻🇳",
+  "version": "2026",
+  "source": {
+    "ko": "2026년 베트남 수출입 관세표",
+    "en": "Vietnam Import-Export Tariff 2026",
+    "vi": "Biểu thuế XNK Việt Nam 2026"
+  },
+  "digits": 8,
+  "valid_from": "2026-01-01",
+
+  "_comment": "source 는 로컬 CSV 경로 또는 구글시트 CSV export URL. 시트를 쓰려면 '링크가 있는 모든 사용자에게 보기 권한'으로 공유한 뒤 아래 형식의 URL 을 넣는다: https://docs.google.com/spreadsheets/d/<시트ID>/export?format=csv&gid=<탭ID>",
+  "source_csv": "hs2026_clean.csv",
+
+  "columns": {
+    "code": "code",
+    "desc_en": "en",
+    "desc_local": "vn",
+    "path_en": "path_en",
+    "path_local": "path_vn",
+    "unit": "unit"
+  },
+
+  "rates": [
+    { "key": "mfn", "col": "uudai", "hero": 1,
+      "label": { "ko": "기본 관세 (WTO)", "en": "Base duty (WTO)", "vi": "Thuế cơ bản (WTO)" },
+      "tip":   { "ko": "WTO 회원국 기본 관세율 — FTA 원산지증명(C/O) 없이 수입할 때 적용",
+                 "en": "WTO most-favoured-nation rate — applies without an FTA certificate of origin",
+                 "vi": "Thuế suất ưu đãi MFN (WTO) — áp dụng khi không có C/O của FTA" } },
+
+    { "key": "akfta", "col": "akfta", "hero": 2, "highlight": true, "badge": "🇰🇷",
+      "label": { "ko": "한·아세안 FTA", "en": "Korea-ASEAN FTA", "vi": "FTA Hàn-ASEAN" },
+      "tip":   { "ko": "한국·아세안 FTA — 한국 원산지증명(C/O Form AK) 제출 시 적용 (한국 수출 시 핵심)",
+                 "en": "Korea-ASEAN FTA — applies with a Korean certificate of origin (Form AK)",
+                 "vi": "FTA Hàn-ASEAN — áp dụng khi có C/O Hàn Quốc (Form AK)" } },
+
+    { "key": "vat", "col": "vat", "hero": 3,
+      "label": { "ko": "부가세 (VAT)", "en": "Import VAT", "vi": "VAT nhập khẩu" },
+      "tip":   { "ko": "수입 부가가치세 — 품목·조건에 따라 5·8·10%",
+                 "en": "Import value-added tax — 5, 8 or 10% depending on the item",
+                 "vi": "Thuế GTGT nhập khẩu — 5, 8 hoặc 10% tùy mặt hàng" } },
+
+    { "key": "vjepa", "col": "vjepa",
+      "label": { "ko": "일·베트남 협정", "en": "Japan-Vietnam EPA", "vi": "EPA Nhật-Việt" },
+      "tip":   { "ko": "일본·베트남 경제동반자협정 — 한국 수출과 무관",
+                 "en": "Japan-Vietnam EPA — not relevant to exports from Korea",
+                 "vi": "EPA Nhật-Việt — không liên quan xuất khẩu từ Hàn Quốc" } },
+
+    { "key": "atiga", "col": "atiga",
+      "label": { "ko": "아세안 협정", "en": "ASEAN ATIGA", "vi": "ATIGA" },
+      "tip":   { "ko": "아세안 역내 무역협정(ATIGA) — 한국 수출과 무관",
+                 "en": "ASEAN Trade in Goods Agreement — not relevant to exports from Korea",
+                 "vi": "ATIGA — không liên quan xuất khẩu từ Hàn Quốc" } },
+
+    { "key": "general", "col": "tt",
+      "label": { "ko": "협정 없을 때", "en": "No agreement", "vi": "Không hiệp định" },
+      "tip":   { "ko": "협정·MFN 미적용 국가에만 적용되는 일반세율 (한국은 보통 해당 없음)",
+                 "en": "Ordinary rate for non-MFN countries (usually not applicable for Korea)",
+                 "vi": "Thuế suất thông thường cho nước không MFN" } }
+  ]
+}
