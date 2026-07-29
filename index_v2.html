@@ -37,6 +37,25 @@
   .lang button{border:0;background:transparent;padding:6px 12px;cursor:pointer;color:var(--ink-3);font-weight:700;font-size:13px;border-radius:8px;font-family:var(--sans)}
   .lang button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.06)}
 
+  /* 국가 선택기 (수출 대상국) */
+  .head-right{position:relative;display:flex;align-items:center;gap:10px}
+  .cpill{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;
+    padding:7px 12px;cursor:pointer;font-family:var(--sans);font-size:13.5px;font-weight:700;color:var(--ink);transition:.12s}
+  .cpill:hover,.cpill.open{border-color:var(--teal);color:var(--teal)}
+  .cpill .cflag{font-size:16px}
+  .cpill svg{color:var(--ink-3);transition:.2s}
+  .cpill.open svg{transform:rotate(180deg)}
+  .cmenu{position:absolute;top:calc(100% + 8px);right:0;z-index:40;background:var(--card);border:1px solid var(--line);
+    border-radius:13px;box-shadow:0 10px 30px rgba(20,32,31,.14);padding:6px;min-width:210px}
+  .cmenu[hidden]{display:none}
+  .citem{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:0;border-radius:10px;
+    padding:11px 13px;cursor:pointer;font-family:var(--sans);font-size:14.5px;font-weight:600;color:var(--ink);transition:.1s}
+  .citem:hover{background:var(--line-2)}
+  .citem.on{color:var(--teal)}
+  .citem .cflag{font-size:18px}
+  .citem .cver{margin-left:auto;font-size:11px;color:var(--ink-3);font-weight:500}
+  @media (max-width:520px){.cpill .cname{display:none}}
+
   /* hero */
   .stage{padding:24px 0 4px}
   h1{font-size:28px;line-height:1.32;letter-spacing:-.03em;margin:0 0 10px;color:var(--ink);font-weight:700}
@@ -241,10 +260,18 @@
     <div class="lockup">
       <img class="logo" src="ptv_hs1.png" alt="PTV HS Code">
     </div>
-    <div class="lang" id="lang">
-      <button data-l="ko" class="on">한국어</button>
-      <button data-l="en">EN</button>
-      <button data-l="vi">VI</button>
+    <div class="head-right">
+      <button class="cpill" id="countryBtn" aria-haspopup="listbox" title="수출 대상국">
+        <span class="cflag" id="cpillFlag">🇻🇳</span>
+        <span class="cname" id="cpillName">베트남</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="cmenu" id="countryMenu" hidden></div>
+      <div class="lang" id="lang">
+        <button data-l="ko" class="on">한국어</button>
+        <button data-l="en">EN</button>
+        <button data-l="vi">VI</button>
+      </div>
     </div>
   </div>
 </header>
@@ -402,19 +429,34 @@ const t=(k)=>I18N[LANG][k];
    국가별 관세표는 data/<국가>.json 하나에 담긴다(품목 + 세율 정의 메타).
    세율 종류·라벨이 국가마다 다르므로 코드에 고정하지 않고 메타에서 읽는다.
    원본은 구글 시트에서 편집하고 tools/build_country_data.py 로 이 파일을 만든다. */
-let DATA=[],META=null;
-const COUNTRY=(new URLSearchParams(location.search).get('country')||'VN').toUpperCase();
+let DATA=[],META=null,COUNTRIES=[];
+let COUNTRY=(()=>{try{return localStorage.getItem('anchor_country')||'';}catch(e){return'';}})()
+  || (new URLSearchParams(location.search).get('country')||'').toUpperCase() || 'VN';
 
-fetch(`data/${COUNTRY}.json`).then(r=>{
-  if(!r.ok)throw new Error(r.status);
-  return r.json();
-}).then(d=>{
-  DATA=d.items||[];META=d.meta||null;
-  applyCountryMeta();
-}).catch(err=>{
-  console.warn('[data] 관세표 로드 실패:',err);
-  document.getElementById('status').textContent=`관세표를 불러오지 못했어요 (data/${COUNTRY}.json)`;
-});
+/* 국가 하나를 로드(전환 포함). 국가마다 코드·세율이 다르므로 캐시(형제 인덱스)도 초기화 */
+function loadCountry(cc){
+  COUNTRY=cc;
+  try{localStorage.setItem('anchor_country',cc);}catch(e){}
+  DATA=[];META=null;TWIN_INDEX=null;
+  return fetch(`data/${cc}.json`).then(r=>{
+    if(!r.ok)throw new Error(r.status);
+    return r.json();
+  }).then(d=>{
+    DATA=d.items||[];META=d.meta||null;
+    applyCountryMeta();renderCountryPill();
+  }).catch(err=>{
+    console.warn('[data] 관세표 로드 실패:',err);
+    document.getElementById('status').textContent=`관세표를 불러오지 못했어요 (data/${cc}.json)`;
+  });
+}
+
+/* 국가 목록(index.json)을 받아 선택기를 구성하고 현재 국가를 로드 */
+fetch('data/index.json').then(r=>r.json()).then(idx=>{
+  COUNTRIES=idx.countries||[];
+  if(!COUNTRIES.some(c=>c.country===COUNTRY))COUNTRY=(COUNTRIES[0]&&COUNTRIES[0].country)||'VN';
+  renderCountryMenu();renderCountryPill();
+  loadCountry(COUNTRY);
+}).catch(()=>{loadCountry(COUNTRY);});   // index 실패해도 기본 국가는 시도
 
 /* 국가 메타를 화면에 반영 — 데이터 기준 문구 등 */
 function applyCountryMeta(){
@@ -426,6 +468,30 @@ function applyCountryMeta(){
     el.textContent=`${label} · ${src}`;
   }
 }
+
+/* ---------------- 국가 선택기 (드롭다운 pill) ---------------- */
+function countryName(c){return (LANG==='ko'?c.name_ko:LANG==='vi'?(c.name_vi||c.name_en):c.name_en)||c.country;}
+function renderCountryPill(){
+  const cur=COUNTRIES.find(c=>c.country===COUNTRY);
+  const f=document.getElementById('cpillFlag'),n=document.getElementById('cpillName');
+  if(f)f.textContent=cur?cur.flag:'🏳️';
+  if(n)n.textContent=cur?countryName(cur):COUNTRY;
+}
+function renderCountryMenu(){
+  const menu=document.getElementById('countryMenu');
+  if(!menu)return;
+  menu.innerHTML=COUNTRIES.map(c=>`<button class="citem${c.country===COUNTRY?' on':''}" data-cc="${c.country}">
+    <span class="cflag">${c.flag}</span><span>${countryName(c)}</span><span class="cver">${c.version||''}</span></button>`).join('');
+  menu.querySelectorAll('.citem').forEach(el=>{
+    el.onclick=()=>{
+      const cc=el.dataset.cc;closeCountryMenu();
+      if(cc===COUNTRY)return;
+      loadCountry(cc).then(()=>{renderCountryMenu();resetHome();});
+    };
+  });
+}
+function openCountryMenu(){const m=document.getElementById('countryMenu');if(m){m.hidden=false;document.getElementById('countryBtn').classList.add('open');}}
+function closeCountryMenu(){const m=document.getElementById('countryMenu');if(m){m.hidden=true;document.getElementById('countryBtn').classList.remove('open');}}
 /* 메타에 정의된 세율만, 정의된 순서대로 */
 function rateSpecs(){return (META&&META.rates)||[];}
 function rateLabel(spec){return (spec.label&&(spec.label[LANG]||spec.label.en))||spec.key;}
@@ -464,6 +530,7 @@ function applyLang(){
   document.getElementById('src').setAttribute('placeholder',t('ph'));
   renderSamples();renderMemory();
   applyCountryMeta();   // i18n 기본 문구 위에 국가 메타(데이터 기준 등)를 덮어쓴다
+  renderCountryPill();renderCountryMenu();   // 국가명은 언어별로 바뀜
   // 이미 출력된 결과가 있으면 새 언어로 다시 렌더 (선택·승격 상태 유지)
   if(CURRENT&&CURRENT.res)renderAnswer(CURRENT.res,CURRENT.query);
 }
@@ -481,6 +548,14 @@ document.getElementById('lang').addEventListener('click',e=>{
   LANG=b.dataset.l;
   [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
   applyLang();
+});
+// 국가 선택기 열기/닫기 (바깥 클릭 시 닫힘)
+document.getElementById('countryBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  document.getElementById('countryMenu').hidden?openCountryMenu():closeCountryMenu();
+});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.head-right'))closeCountryMenu();
 });
 
 /* ---------------- search core ---------------- */

@@ -82,6 +82,9 @@ def build(rows):
         h = node["htsno"]
         if not h or len(h.replace(".", "")) < 8:
             continue                     # 상위 그룹행은 경로로만 쓰고 코드로는 안 냄
+        if h[:2] in ("98", "99"):
+            continue                     # 98·99류는 특수·임시 규정(추가관세/일시감면) — 품목 분류가 아니라 제외
+                                         # (9903 추가관세는 원본에서 2단계 오버레이로 따로 뽑는다)
 
         # 조상에서 세율 상속(자기 값이 비면 가까운 조상 값)
         def inherit(field):
