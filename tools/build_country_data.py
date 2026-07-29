@@ -22,6 +22,7 @@
 """
 
 import csv
+import datetime as _dt
 import io
 import json
 import os
@@ -96,8 +97,10 @@ def build(conf, rows):
                       "u": pick(row, cols, "unit"), "r": r})
 
     meta = {k: conf[k] for k in
-            ("country", "name_ko", "name_en", "flag", "version", "source", "digits", "valid_from")
+            ("country", "name_ko", "name_en", "flag", "version", "source",
+             "digits", "valid_from", "updated", "provenance")
             if k in conf}
+    meta["built_at"] = _dt.date.today().isoformat()   # 이 파일을 언제 생성했는지(신선도)
     meta["count"] = len(items)
     meta["rates"] = [{k: s[k] for k in ("key", "label", "tip", "hero", "highlight", "badge") if k in s}
                      for s in rates]
@@ -152,13 +155,47 @@ def write_index():
             c = json.load(f)
         if os.path.exists(os.path.join(OUT_DIR, f"{c['country']}.json")):
             entries.append({k: c[k] for k in
-                            ("country", "name_ko", "name_en", "flag", "version") if k in c})
+                            ("country", "name_ko", "name_en", "flag", "version", "updated") if k in c})
     with open(os.path.join(OUT_DIR, "index.json"), "w", encoding="utf-8") as f:
         json.dump({"countries": entries}, f, ensure_ascii=False, indent=1)
     print(f"\ndata/index.json: {', '.join(e['country'] for e in entries) or '(없음)'}")
 
 
+def status():
+    """유지보수용 대시보드 — 국가별 버전·갱신일·자릿수·출처·층 구조를 한눈에"""
+    today = _dt.date.today()
+    print(f"{'국가':4} {'버전':6} {'갱신일':11} {'자리':4} {'층':11} {'경과':6} 출처")
+    print("-" * 78)
+    for fn in sorted(os.listdir(CONF_DIR)):
+        if not fn.endswith(".json"):
+            continue
+        with open(os.path.join(CONF_DIR, fn), encoding="utf-8") as f:
+            c = json.load(f)
+        prov = c.get("provenance", {})
+        upd = c.get("updated", "")
+        age = ""
+        try:
+            days = (today - _dt.date.fromisoformat(upd)).days
+            age = f"{days}일"
+            if days > 400:
+                age = f"⚠{days}일"
+        except ValueError:
+            age = "?"
+        built = os.path.exists(os.path.join(OUT_DIR, f"{c['country']}.json"))
+        auth = prov.get("authority", "") or (c.get("source", {}) if isinstance(c.get("source"), str) else "")
+        print(f"{c['country']:4} {str(c.get('version','')):6} {upd:11} "
+              f"{str(prov.get('national_digits', c.get('digits',''))):4} "
+              f"{prov.get('layers','base_only'):11} {age:6} "
+              f"{'' if built else '(미생성) '}{auth[:34]}")
+    ov_dir = os.path.join(OUT_DIR, "overlays")
+    ovs = [f for f in os.listdir(ov_dir)] if os.path.isdir(ov_dir) else []
+    print(f"\n추가관세 오버레이: {', '.join(ovs) if ovs else '(없음)'}")
+
+
 def main():
+    if "--status" in sys.argv:
+        status()
+        return
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     check_only = "--check" in sys.argv
     names = ([f[:-5] for f in sorted(os.listdir(CONF_DIR)) if f.endswith(".json")]

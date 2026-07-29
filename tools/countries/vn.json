@@ -11,8 +11,19 @@
   },
   "digits": 8,
   "valid_from": "2026-01-01",
+  "updated": "2026-07-28",
 
-  "_comment": "source 는 로컬 CSV 경로 또는 구글시트 CSV export URL. 시트를 쓰려면 '링크가 있는 모든 사용자에게 보기 권한'으로 공유한 뒤 아래 형식의 URL 을 넣는다: https://docs.google.com/spreadsheets/d/<시트ID>/export?format=csv&gid=<탭ID>",
+  "provenance": {
+    "authority": "베트남 재무부 (Bộ Tài chính) · BIEU THUE XNK",
+    "url": "",
+    "format": "csv",
+    "national_digits": 8,
+    "cadence": "연 1회(연간 관세표) + 수시(법령 개정)",
+    "layers": "base_only",
+    "note": "정치적 추가관세 층 없음. base_only 는 오버레이가 불필요하다는 뜻."
+  },
+
+  "_comment": "source_csv 는 로컬 CSV 경로 또는 구글시트 CSV export URL. 시트를 쓰려면 '링크가 있는 모든 사용자에게 보기 권한'으로 공유한 뒤 아래 형식의 URL 을 넣는다: https://docs.google.com/spreadsheets/d/<시트ID>/export?format=csv&gid=<탭ID>",
   "source_csv": "hs2026_clean.csv",
 
   "columns": {

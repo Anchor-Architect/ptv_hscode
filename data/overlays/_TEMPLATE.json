@@ -1,0 +1,23 @@
+{
+  "_doc": "정치적 추가관세 층(②). 기본세율(data/<국가>.json) 위에 얹힌다. 실효세율 = 기본 + 적용되는 규칙의 add_pct 합. 이 파일만 수시로 손으로 고치면 되고, 큰 기본세율 파일은 건드리지 않는다. 파일명은 국가코드로: 예) US.json, CN.json. 필요 없는 국가(예: 베트남)는 파일을 만들지 않는다.",
+  "country": "US",
+  "updated": "2026-01-15",
+  "rules": [
+    {
+      "name": "Section 232 철강",
+      "hs_prefix": ["7208", "7209", "7210", "7211", "7212", "7304", "7305", "7306"],
+      "origin": "all",
+      "add_pct": 25,
+      "source": "CBP / Federal Register 고시 번호 기입",
+      "effective": "2026-01-01"
+    },
+    {
+      "name": "Section 301 대중 (참고 — 한국산엔 미적용)",
+      "hs_prefix": ["8541", "8542"],
+      "origin": "CN",
+      "add_pct": 25,
+      "source": "USTR List / Federal Register",
+      "effective": "2026-01-01"
+    }
+  ]
+}
