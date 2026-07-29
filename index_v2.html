@@ -142,6 +142,7 @@
   .coderow:hover{background:var(--card);border-color:var(--teal)}
   .coderow .crc{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);flex:0 0 auto;min-width:110px}
   .coderow .crd{font-size:14px;color:var(--ink-2);flex:1;line-height:1.4}
+  .addmark{margin-left:6px;font-size:12px;color:var(--warn);cursor:help}
   .coderow .cra{color:var(--ink-3);flex:0 0 auto}
   .coderow:hover .cra{color:var(--teal)}
   .codemore{font-size:13px;color:var(--ink-3);text-align:center;padding:10px 0 2px}
@@ -694,7 +695,10 @@ function cleanRate(v){
   if(v==null||v==='')return'—';
   v=String(v).trim();
   const nums=v.match(/\d+(?:\.\d+)?/g);
-  if(!nums)return v;
+  if(!nums)return v;                                 // "Free" 등 글자 → 그대로
+  // 미국식 세율(글자·통화기호 포함: "Free","1¢/kg","6.8%+2.6¢/kg")은 이미 사람이 읽는 형식 → 원문 유지.
+  // ¢·$·letter 가 있으면 손대지 않는다(%로 잘못 바꾸면 종량세가 오표기됨).
+  if(/[a-z¢$]/i.test(v))return v;
   // 별표·슬래시로 나뉜 복수 세율(VAT "8/10", "*/5/8/10")은 전부 표기
   if(/^[*\/\d.\s]+$/.test(v))return nums.join('/')+'%';
   // 숫자 뒤에 국가 제외 등 부가정보가 붙은 경우("0(-LA, MY, PH, TH)%")는 앞 숫자만
@@ -738,6 +742,11 @@ function renderAnswer(res,query){
   const twinBanner = twins>1
     ? `<div class="twinwarn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:0 0 auto;margin-top:2px"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 16v.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>${t('twinWarn').replace('{n}',twins)}</span></div>`
     : '';
+  // 미국 232/301 등 추가관세 대상 — 기본세율 위에 얹혀 실제 부과세율이 더 높을 수 있음
+  const addNote=(META&&META.notice&&(META.notice[LANG]||META.notice.en))||'';
+  const addBanner = b.rec.add&&addNote
+    ? `<div class="twinwarn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:0 0 auto;margin-top:2px"><path d="M12 3l9 16H3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4M12 16.5v.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>${addNote}</span></div>`
+    : '';
 
   answerMount.innerHTML=`
    <div class="answer">
@@ -749,6 +758,7 @@ function renderAnswer(res,query){
           <span class="refchip" title="${t('refShort')}">${t('refLabel')}</span>
         </div>
         ${pathHTML(b.rec)}
+        ${addBanner}
         ${twinBanner}
         ${recallBanner}
       </div>
@@ -857,9 +867,10 @@ function renderClarify(clarify,query){
 /* ---------------- HS 코드 조회 렌더 ---------------- */
 function codeRowHTML(rec){
   const leaf=rec.e.split(' > ').slice(-1)[0];
+  const addMark=rec.add?`<span class="addmark" title="${(META&&META.notice&&(META.notice[LANG]||META.notice.en))||''}">🅐</span>`:'';
   return `<button class="coderow" data-code="${rec.c}">
     <span class="crc">${fmtCode(rec.c)}</span>
-    <span class="crd">${leaf}</span>
+    <span class="crd">${leaf}${addMark}</span>
     <svg class="cra" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>`;
 }

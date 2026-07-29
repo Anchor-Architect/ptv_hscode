@@ -1,6 +1,14 @@
 {
  "countries": [
   {
+   "country": "US",
+   "name_ko": "미국",
+   "name_en": "United States",
+   "flag": "🇺🇸",
+   "version": "2026 Rev.12",
+   "updated": "2026-07-29"
+  },
+  {
    "country": "VN",
    "name_ko": "베트남",
    "name_en": "Vietnam",
