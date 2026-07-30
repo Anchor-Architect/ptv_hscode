@@ -430,8 +430,9 @@ const t=(k)=>I18N[LANG][k];
    세율 종류·라벨이 국가마다 다르므로 코드에 고정하지 않고 메타에서 읽는다.
    원본은 구글 시트에서 편집하고 tools/build_country_data.py 로 이 파일을 만든다. */
 let DATA=[],META=null,COUNTRIES=[];
-let COUNTRY=(()=>{try{return localStorage.getItem('anchor_country')||'';}catch(e){return'';}})()
-  || (new URLSearchParams(location.search).get('country')||'').toUpperCase() || 'VN';
+// URL 파라미터가 있으면 최우선(공유 링크·테스트용), 없으면 저장값, 그다음 기본 VN
+let COUNTRY=(new URLSearchParams(location.search).get('country')||'').toUpperCase()
+  || (()=>{try{return localStorage.getItem('anchor_country')||'';}catch(e){return'';}})() || 'VN';
 
 /* 국가 하나를 로드(전환 포함). 국가마다 코드·세율이 다르므로 캐시(형제 인덱스)도 초기화 */
 function loadCountry(cc){
@@ -563,8 +564,15 @@ const SYN={
   'áo thun':'áo phông t-shirt','ao thun':'áo phông t-shirt','áo phông':'t-shirt',
   '티셔츠':'t-shirt áo phông','티':'t-shirt','반팔':'t-shirt short sleeve',
   '볼트':'bolt bu lông','bu lông':'bolt','너트':'nut đai ốc','나사':'screw vít',
-  '스테인리스':'stainless inox','인조섬유':'man-made fibres synthetic','폴리에스터':'polyester man-made fibres',
-  '면':'cotton','니트':'knitted','배터리':'battery pin','리튬':'lithium',
+  '스테인리스':'stainless inox','인조섬유':'man-made fibres fibers synthetic','폴리에스터':'polyester man-made fibres fibers synthetic',
+  '면':'cotton','니트':'knitted sweater pullover','배터리':'battery pin','리튬':'lithium',
+  // 의류 품명 (미국 관세표는 sweater/pullover 로 표기)
+  '스웨터':'sweater pullover jersey knitted','풀오버':'pullover sweater jersey','가디건':'cardigan',
+  '셔츠':'shirt','바지':'trousers pants','치마':'skirt','원피스':'dress','재킷':'jacket','코트':'coat','장갑':'gloves',
+  '전선':'wire cable insulated','전화':'telephone','스마트폰':'smartphone telephone','노트북':'laptop portable data processing',
+  '컴퓨터':'computer data processing machine','모니터':'monitor','타이어':'tyre tire pneumatic','커피':'coffee',
+  '초콜릿':'chocolate cocoa','맥주':'beer','쌀':'rice','밀가루':'wheat flour','시멘트':'cement','안전모':'safety helmet headgear',
+  '원두':'coffee beans roasted','볶은':'roasted',
   '새우':'shrimp prawn tôm','냉동':'frozen đông lạnh',
   // 일상 영어 → 관세표 표기. 관세표는 "prawns"를 쓰는데 서류엔 "shrimp"로 적히는 식의 간극을 메움
   // 재질은 HS 분류에서 가장 결정적인 단서다. 재질어가 빠지면 같은 품명이 엉뚱한 호로 간다
@@ -582,7 +590,18 @@ const SYN={
   'shrimp':'prawn tôm crustacean','prawn':'shrimp tôm crustacean',
   'bolt':'screw threaded fastener bu lông','screw':'bolt threaded vít',
   'helmet':'headgear safety','t-shirt':'t-shirt singlet áo phông',
-  'pullover':'jersey pullover cardigan','battery':'accumulator pin'
+  'pullover':'jersey pullover cardigan sweater','battery':'accumulator pin',
+  // 영어 일상어 → 관세표(HS/미국 HTS) 표기 다리. 한국어처럼 영어도 관세표는 다른 단어를 쓴다.
+  // (예: 관세표는 polyester 대신 "man-made fibers", computer 대신 "automatic data processing machine")
+  'polyester':'man-made fibres fibers synthetic','nylon':'man-made fibres fibers synthetic',
+  'acrylic':'man-made fibres fibers synthetic','synthetic':'man-made fibres fibers',
+  'sweater':'pullover jersey knitted','jumper':'pullover sweater',
+  'computer':'automatic data processing machine','laptop':'portable automatic data processing computer',
+  'notebook':'portable automatic data processing','smartphone':'telephone cellular network smartphone',
+  'phone':'telephone','tire':'tyre pneumatic','tyre':'tire pneumatic',
+  'chair':'seat','sofa':'seat','wire':'cable insulated','cable':'wire insulated',
+  'shoe':'footwear','shoes':'footwear','sneaker':'footwear'
+  // 주의: 'glass':'glassware' 는 넣지 않는다 — 포장용 유리병(7010)이 식탁용 유리제품(7013)으로 잘못 감(회귀 확인)
 };
 function expandSynonyms(s){
   let x=' '+s.toLowerCase()+' ';
@@ -631,13 +650,15 @@ function prefilter(query,limit,stats){
   });
   out.sort((a,b)=>b[0]-a[0]);
   if(stats&&out.length)stats.topMatched=out[0][2];
-  // 한 4자리 호(heading)가 후보를 독식하지 않도록 상한 — 예: "bolt"가 윤활유(3403) 설명과
-  // 매칭돼 진짜 볼트(7318)를 밀어내는 오분류 방지
-  const perHead={},picked=[];
+  // 다양성 상한. 한 호(4자리)가 후보를 독식하면 안 되고(볼트 vs 윤활유 3403),
+  // 같은 호 안에서도 한 소호(6자리·재질 구분)가 다른 재질을 밀어내면 안 된다
+  // (미국 6110: 양모 소호가 폴리에스터 소호를 밀어내 폴리에스터 풀오버가 안 잡히던 문제).
+  const perHead={},perSub={},picked=[];
   for(const [sc,r] of out){          // eslint-disable-line no-unused-vars
-    const h=r.c.slice(0,4);
+    const h=r.c.slice(0,4),s=r.c.slice(0,6);
     perHead[h]=(perHead[h]||0)+1;
-    if(perHead[h]<=6)picked.push(r);
+    perSub[s]=(perSub[s]||0)+1;
+    if(perHead[h]<=10&&perSub[s]<=3)picked.push(r);
     if(picked.length>=limit)break;
   }
   return picked;
@@ -706,7 +727,9 @@ Respond ONLY with minified JSON, no markdown:
   try{
     const resp=await fetch("/api/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1024,
+      // 분류 모델은 국가 메타에서 지정 가능(기본 haiku). 미국처럼 코드가 많고 구분이 미묘한 곳은
+      // sonnet 을 써서 최종 선택 정확도를 높인다(haiku 는 laptop→9017 같은 오답을 냄).
+      body:JSON.stringify({model:(META&&META.model)||"claude-haiku-4-5-20251001",max_tokens:1024,
         messages:[{role:"user",content:prompt}]})
     });
     if(!resp.ok)throw new Error('api');

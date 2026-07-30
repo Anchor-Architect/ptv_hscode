@@ -174,6 +174,8 @@ def main():
 
     meta = {"country": "US", "name_ko": "미국", "name_en": "United States", "flag": "🇺🇸",
             "version": "2026 Rev.12", "digits": 10,
+            "model": "claude-sonnet-5",   # 미국은 코드 多·구분 미묘 → 분류는 sonnet 으로 정확도 우선
+
             "updated": _dt.date.today().isoformat(), "built_at": _dt.date.today().isoformat(),
             "source": {"ko": "미국 HTS 2026 (USITC)", "en": "US HTS 2026 (USITC)", "vi": "HTS Hoa Kỳ 2026 (USITC)"},
             "provenance": {"authority": "USITC Harmonized Tariff Schedule",

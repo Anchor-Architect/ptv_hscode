@@ -11,6 +11,9 @@
   button{font-family:inherit;font-size:15px;font-weight:700;background:#2563eb;color:#fff;border:0;
     border-radius:10px;padding:12px 22px;cursor:pointer}
   button:disabled{opacity:.5;cursor:default}
+  #ctry{display:inline-flex;gap:4px;background:#eceef0;border-radius:10px;padding:3px;margin-right:6px}
+  .cbtn{font-size:13px;font-weight:700;background:transparent;color:#4e5968;padding:8px 14px;border-radius:8px}
+  .cbtn.on{background:#fff;color:#191f28;box-shadow:0 1px 3px rgba(0,0,0,.08)}
   .bar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
   .score{font-size:15px;font-weight:700}
   .score .ok{color:#0f8a5f}.score .no{color:#c0392b}
@@ -34,6 +37,7 @@
     HS 분류는 해석 여지가 있어 <b>4자리 호(heading)</b> 기준으로 채점하며, 정당한 대안이 있는 품목은 복수 정답을 인정합니다.
   </p>
   <div class="bar">
+    <span id="ctry"></span>
     <button id="run">테스트 실행</button>
     <span id="score" class="score muted">대기 중</span>
     <span id="prog" class="muted"></span>
@@ -50,11 +54,12 @@
   </div>
 </div>
 
-<iframe id="app" src="../index_v2.html"></iframe>
+<iframe id="app"></iframe>
 
 <script>
 /* 실제 앱을 iframe 으로 띄워 UI 흐름 그대로 검증한다(로직 복제 없이 회귀를 잡기 위함). */
-const CASES = [
+const CASE_SETS = {
+ VN: [
   {q:"스테인리스 육각 볼트 M8",              expect:["7318"]},
   {q:"stainless hex bolt M8",                expect:["7318"]},
   {q:"Men's knitted pullover, 100% polyester", expect:["6110"]},
@@ -80,20 +85,67 @@ const CASES = [
   {q:"가정용 에어컨",                        expect:["8415"]},
   {q:"백미 쌀",                             expect:["1006"]},
   {q:"목재 사무용 의자",                     expect:["9401"]},
-];
+ ],
+ US: [
+  {q:"Men's knitted pullover, 100% polyester", expect:["6110"]},
+  {q:"남성 니트 스웨터 폴리에스터",           expect:["6110"]},
+  {q:"cotton t-shirt for men",               expect:["6109"]},
+  {q:"남성 면 티셔츠",                        expect:["6109"]},
+  {q:"stainless steel hex bolt",             expect:["7318"]},
+  {q:"스테인리스 볼트",                       expect:["7318"]},
+  {q:"lithium-ion battery pack for laptop",  expect:["8507"]},
+  {q:"roasted arabica coffee beans",         expect:["0901"]},
+  {q:"커피 원두 볶은 것",                     expect:["0901"]},
+  {q:"polycarbonate safety helmet",          expect:["6506"]},
+  {q:"new pneumatic rubber tire for car",    expect:["4011"]},
+  {q:"smartphone",                           expect:["8517"]},
+  {q:"wooden chair for office",              expect:["9401"]},
+  {q:"leather handbag",                      expect:["4202"]},
+  {q:"가죽 지갑",                             expect:["4202"]},
+  {q:"laptop computer",                      expect:["8471"]},
+  {q:"insulated copper electric wire",       expect:["8544"]},
+  {q:"drinking glass tableware",             expect:["7013"]},
+  {q:"plastic kitchen storage container",    expect:["3924"]},
+  {q:"chocolate bar",                        expect:["1806"]},
+  {q:"men's leather shoes",                  expect:["6403"]},
+  {q:"white milled rice",                    expect:["1006"]},
+  {q:"aluminum foil for kitchen",            expect:["7607"]},
+  {q:"wheat flour",                          expect:["1101"]},
+  {q:"portland cement",                      expect:["2523"]},
+ ],
+};
+const urlC = (new URLSearchParams(location.search).get('c')||'VN').toUpperCase();
+let COUNTRY = CASE_SETS[urlC] ? urlC : 'VN';
+let CASES = CASE_SETS[COUNTRY];
 
 const $ = s => document.querySelector(s);
 const frame = $('#app');
 
 function appWin(){ return frame.contentWindow; }
 
+// 국가 전환 UI: 앱 iframe 을 ?country=XX 로 다시 로드하고 그 국가 케이스로 채점
+function renderCtry(){
+  $('#ctry').innerHTML = Object.keys(CASE_SETS).map(cc =>
+    `<button class="cbtn${cc===COUNTRY?' on':''}" data-cc="${cc}">${cc} (${CASE_SETS[cc].length})</button>`).join('');
+  $('#ctry').querySelectorAll('.cbtn').forEach(b=>{
+    b.onclick=()=>{ if(b.dataset.cc===COUNTRY) return;
+      COUNTRY=b.dataset.cc; CASES=CASE_SETS[COUNTRY];
+      $('#tbl tbody').innerHTML=''; $('#score').textContent='대기 중'; $('#score').className='score muted'; $('#prog').textContent='';
+      loadFrame(); renderCtry();
+    };
+  });
+}
+function loadFrame(){ frame.src = `../index_v2.html?country=${COUNTRY}&t=${Date.now()}`; }
+
 async function waitReady(){
   // 앱은 관세표를 `let DATA` 로 담는데 let 은 window 속성이 아니라 부모에서 직접 못 본다.
-  // iframe 스코프에서 평가해 로딩 완료를 확인한다.
-  for (let i=0;i<160;i++){
+  // iframe 스코프에서 평가해 로딩 완료 + 국가 일치를 확인한다.
+  for (let i=0;i<200;i++){
     try{
       const w=appWin();
-      if(w && typeof w.run==='function' && w.eval('typeof DATA!=="undefined" && DATA.length>0')) return true;
+      if(w && typeof w.run==='function'
+         && w.eval('typeof DATA!=="undefined" && DATA.length>0')
+         && w.eval('typeof COUNTRY!=="undefined" ? COUNTRY : ""')===COUNTRY) return true;
     }catch(e){}
     await new Promise(r=>setTimeout(r,250));
   }
@@ -149,6 +201,9 @@ $('#run').onclick = async () => {
   $('#score').innerHTML = `<span class="${ok===CASES.length?'ok':'no'}">${ok} / ${CASES.length} 통과 (${(ok/CASES.length*100).toFixed(0)}%)</span>`;
   btn.disabled=false;
 };
+
+renderCtry();
+loadFrame();
 </script>
 </body>
 </html>
