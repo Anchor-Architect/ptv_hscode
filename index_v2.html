@@ -444,6 +444,8 @@ function loadCountry(cc){
     return r.json();
   }).then(d=>{
     DATA=d.items||[];META=d.meta||null;
+    // 검색용 해이스택(영어+베트남어)을 폴딩해 미리 캐시 — 매 검색마다 성조 폴딩을 반복하지 않도록
+    for(const r of DATA)r._h=foldVN((r.e+' '+(r.v||'')).toLowerCase());
     applyCountryMeta();renderCountryPill();
   }).catch(err=>{
     console.warn('[data] 관세표 로드 실패:',err);
@@ -600,16 +602,32 @@ const SYN={
   'notebook':'portable automatic data processing','smartphone':'telephone cellular network smartphone',
   'phone':'telephone','tire':'tyre pneumatic','tyre':'tire pneumatic',
   'chair':'seat','sofa':'seat','wire':'cable insulated','cable':'wire insulated',
-  'shoe':'footwear','shoes':'footwear','sneaker':'footwear'
+  'shoe':'footwear','shoes':'footwear','sneaker':'footwear',
+  // 베트남어 다리 — 다의 단일어(nhựa=플라스틱/수지, cao su=고무/고무나무)는 계속 피하고,
+  // 뜻이 분명한 복합어·명확어만 넣는다. 성조 폴딩 덕에 키는 성조 유무 상관없이 매칭된다.
+  'xe đạp':'bicycle cycle','xe máy':'motorcycle','ô tô':'motor car vehicle',
+  'giày':'footwear shoes','dép':'footwear sandals','giày da':'leather footwear',
+  'áo len':'sweater pullover jersey knitted','áo khoác':'jacket coat anorak','áo sơ mi':'shirt',
+  'gỗ dán':'plywood','ván ép':'plywood','thép không gỉ':'stainless steel','inox':'stainless steel',
+  'lốp':'tyre tire pneumatic','đông lạnh':'frozen','tôm':'shrimp prawn crustacean'
   // 주의: 'glass':'glassware' 는 넣지 않는다 — 포장용 유리병(7010)이 식탁용 유리제품(7013)으로 잘못 감(회귀 확인)
 };
-function expandSynonyms(s){
-  let x=' '+s.toLowerCase()+' ';
-  for(const k in SYN){ if(x.includes(k)) x+=' '+SYN[k]; }
+/* 베트남어 성조 부호 제거(ASCII 폴딩). á→a, đ→d 등.
+   토큰화 문자클래스가 a-z만 허용해 성조 글자를 통째로 지우던 문제를 없앤다
+   (예전엔 "gỗ dán"→토큰 0개, "tôm đông lạnh"→[ng,nh] 로 검색이 깨졌다).
+   한글은 NFD 후 결합기호가 없어 NFC 재결합으로 원형 보존된다("티셔츠"→"티셔츠"). */
+function foldVN(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[đĐ]/g,'d').normalize('NFC');
+}
+function expandSynonyms(s){        // s는 이미 폴딩·소문자
+  let x=' '+s+' ';
+  for(const k in SYN){ if(x.includes(foldVN(k))) x+=' '+SYN[k]; }
   return x;
 }
 function tokenize(s){
-  return expandSynonyms(s).replace(/[^a-z0-9가-힣%]+/g,' ').split(/\s+/).filter(w=>w.length>1);
+  // 입력을 폴딩해 SYN 키를 매칭한 뒤, 붙인 SYN 값(베트남어 포함)까지 다시 폴딩해 조각남을 막는다
+  return foldVN(expandSynonyms(foldVN(s.toLowerCase())))
+    .replace(/[^a-z0-9가-힣%]+/g,' ').split(/\s+/).filter(w=>w.length>1);
 }
 /* 토큰별 매칭기. 부분 문자열 매칭은 "hex"가 "cyclohexane"에 걸리는 등 오탐이 많아
    단어 경계를 본다. 4자 이상은 단어 앞부분 일치(bolt→bolts), 3자 이하는 완전 일치. */
@@ -630,7 +648,7 @@ function prefilter(query,limit,stats){
   // 1차: 항목별로 맞는 토큰을 모으며 토큰 출현 빈도(df)도 함께 센다.
   const hits=[],df={};
   for(const r of DATA){
-    const hay=(r.e+' '+r.v).toLowerCase();
+    const hay=r._h||foldVN((r.e+' '+(r.v||'')).toLowerCase());
     let m=null;
     for(let i=0;i<toks.length;i++){
       if(matchers[i](hay)){(m||(m=[])).push(toks[i]);df[toks[i]]=(df[toks[i]]||0)+1;}
@@ -706,7 +724,8 @@ async function classify(query){
   }
   if(!cand.length)return{ok:false};
 
-  const list=cand.map(r=>`${r.c} | ${r.e}`).join('\n');
+  // 후보 설명에 현지어(베트남어 v)도 함께 넘겨, 베트남어 검색어를 모델이 더 정확히 대응시키게 한다
+  const list=cand.map(r=>`${r.c} | ${r.e}`+(r.v?` | ${r.v}`:'')).join('\n');
   const langName={ko:'Korean',en:'English',vi:'Vietnamese'}[LANG];
   const prompt=`You are a Vietnam customs HS classification assistant. The user pastes a goods description that may mix Korean, English and Vietnamese, and may be messy (abbreviations, model numbers).
 
