@@ -144,6 +144,9 @@
   .path{font-size:16px;color:var(--ink);line-height:1.5}
   .path .leaf{font-weight:700}
   .path .sep{color:var(--ink-3)}
+  .ko{font-size:15px;color:var(--ink-2);margin-top:5px;line-height:1.45}
+  .ko .leaf{font-weight:700}
+  .ko .sep{color:var(--ink-3)}
   .vn{font-size:14px;color:var(--ink-3);margin-top:5px;font-style:italic;line-height:1.45}
 
   .recall{margin-top:16px;padding:14px 16px;background:var(--ok-bg);border-radius:12px;font-size:15px;color:var(--ok);font-weight:600;display:flex;gap:8px;align-items:center}
@@ -799,12 +802,18 @@ function confWord(conf,twins){
   if(conf>=55)return{cls:'mid',txt:t('confMid'),ic:'M12 8v5M12 16v.5'};
   return{cls:'lo',txt:t('confLo'),ic:'M12 8v5M12 16v.5'};
 }
-function pathHTML(rec){
-  const parts=rec.e.split(' > ');
+// 경로 문자열('A > B > C')을 리프 강조한 계층 표시로 렌더. cls 로 언어별 스타일 구분.
+function segPath(str,cls){
+  const parts=str.split(' > ');
   const leaf=parts.pop();
   const trail=parts.map(p=>`<span>${p}</span>`).join(' <span class="sep">›</span> ');
-  return `<div class="path">${trail}${parts.length?' <span class="sep">›</span> ':''}<span class="leaf">${leaf}</span></div>
-    ${rec.v?`<div class="vn">${rec.v}</div>`:''}`;
+  return `<div class="${cls}">${trail}${parts.length?' <span class="sep">›</span> ':''}<span class="leaf">${leaf}</span></div>`;
+}
+function pathHTML(rec){
+  // 영문(원문) → 국문(참고 번역) → 베트남어 순. 국문은 한국 사용자용 표시.
+  return segPath(rec.e,'path')
+    + (rec.k?segPath(rec.k,'ko'):'')
+    + (rec.v?`<div class="vn">${rec.v}</div>`:'');
 }
 function pct(v){return (v===''||v==null)?'—':(/^\d/.test(v)?v+'%':v);}
 // 관세표 원문 표기(예: "0(-LA, MY, PH, TH)%", 또는 별표·슬래시 섞인 VAT)를 실무자용 깔끔한 숫자로 정리
