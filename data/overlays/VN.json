@@ -1,0 +1,41 @@
+{
+  "_doc": "베트남 무역구제(반덤핑 AD·상계 CVD·세이프가드 SG) 경고 층. 기본세율(data/VN.json) 위에 얹힌다. 이 파일은 '세율'이 아니라 '대상 여부 경고 + 공식 결정 안내'를 담는다 — 반덤핑 세율은 수출기업별로 다르고 수시 재심(재심·일몰)으로 바뀌므로 단일 숫자로 확정하지 않는다. 검색한 코드가 measures[].hs 에 걸리면 앱이 경고를 띄운다. korea_subject=true 는 한국산이 대상이라는 뜻(핵심). 새 조치는 measures 에 추가하고, 종료·상태 불확실한 건 넣지 않는다. 출처: 무역구제국(pvtm.gov.vn).",
+  "country": "VN",
+  "authority": "Cục Phòng vệ thương mại (Trade Remedies Authority of Vietnam, MOIT)",
+  "authority_url": "https://pvtm.gov.vn",
+  "updated": "2026-07-31",
+  "notice": {
+    "ko": "이 품목은 베트남 무역구제(반덤핑 등) 조치 대상일 수 있습니다. 실제 부과세율은 수출기업·원산지증명에 따라 다르며 재심으로 바뀔 수 있으니, 통관 전 아래 공식 결정을 반드시 확인하세요.",
+    "en": "This item may be subject to a Vietnamese trade-remedy (anti-dumping) measure. The actual duty depends on the exporter and can change on review — verify against the official decision before customs clearance.",
+    "vi": "Mặt hàng này có thể thuộc diện bị áp dụng biện pháp phòng vệ thương mại (chống bán phá giá) của Việt Nam. Mức thuế thực tế tùy nhà xuất khẩu và có thể thay đổi khi rà soát — hãy kiểm tra quyết định chính thức trước khi thông quan."
+  },
+  "measures": [
+    {
+      "case": "AD19",
+      "type": "AD",
+      "product": {
+        "ko": "코팅강판 (도금·컬러강판 등 특정 코팅 평판압연강)",
+        "en": "Certain coated steel",
+        "vi": "Một số sản phẩm thép mạ (thép phủ màu)"
+      },
+      "decision": "2310/QĐ-BCT",
+      "decision_date": "2025-08-14",
+      "hs": [
+        "72107012", "72107013", "72107019", "72107021", "72107029", "72107091", "72107099",
+        "72124011", "72124012", "72124013", "72124014", "72124019", "72124091", "72124099",
+        "72259990", "72269919", "72269999"
+      ],
+      "origins": ["CN", "KR"],
+      "korea_subject": true,
+      "rate_note": {
+        "ko": "한국산 최대 15.67%, 중국산 최대 37.13% — 수출기업별 상이",
+        "en": "Up to 15.67% (Korea), up to 37.13% (China); varies by exporter",
+        "vi": "Tối đa 15,67% (Hàn Quốc), tối đa 37,13% (Trung Quốc); tùy nhà xuất khẩu"
+      },
+      "status": "in_force",
+      "effective": "2025-08-14",
+      "source": "https://pvtm.gov.vn",
+      "verify_note": "HS 범위·기업별 세율은 공식 결정 2310/QĐ-BCT 본문 기준으로 최종 확인 필요."
+    }
+  ]
+}
