@@ -165,6 +165,8 @@
   .coderow .crc{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);flex:0 0 auto;min-width:110px}
   .coderow .crd{font-size:14px;color:var(--ink-2);flex:1;line-height:1.4}
   .addmark{margin-left:6px;font-size:12px;color:var(--warn);cursor:help}
+  .coderow .crr{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--teal);background:var(--teal-soft);
+    padding:3px 9px;border-radius:999px;flex:0 0 auto;white-space:nowrap}
   .coderow .cra{color:var(--ink-3);flex:0 0 auto}
   .coderow:hover .cra{color:var(--teal)}
   .codemore{font-size:13px;color:var(--ink-3);text-align:center;padding:10px 0 2px}
@@ -350,7 +352,7 @@ const I18N={
     findbtn:"코드 찾기",try:"이렇게 넣어보세요",recent:"최근 확정한 분류",
     fastLabel:"빠른 검색",fastHint:"간단한 품목을 더 빠르게",
     attach:"사진·PDF 첨부",dropHere:"여기에 놓으면 읽어드려요",reading:"서류를 읽고 있어요",
-    fileOk:"에서 읽었어요 · 내용을 확인하고 검색하세요",fileNoText:"품목명을 찾지 못했어요. 직접 입력해 주세요.",
+    fileOk:"에서 읽어 바로 검색했어요 · 품목이 다르면 위에서 고쳐 다시 찾기",fileNoText:"품목명을 찾지 못했어요. 직접 입력해 주세요.",
     fileTooBig:"파일이 너무 커요. 3MB 이하로 줄여서 다시 올려주세요.",fileBad:"이 파일은 읽을 수 없어요. 사진(JPG·PNG) 또는 PDF만 가능해요.",
     filePages:"{n}장짜리 PDF네요. 품목표가 있는 한 장만 올리시면 더 빠르고 정확해요.",
     stamp:"데이터 기준 · 2026년 베트남 수출입 관세표",noteTitle:"이용 안내",
@@ -375,7 +377,7 @@ const I18N={
     findbtn:"Find code",try:"Try one of these",recent:"Recently confirmed",
     fastLabel:"Fast search",fastHint:"faster for simple items",
     attach:"Attach photo or PDF",dropHere:"Drop it here and we'll read it",reading:"Reading the document",
-    fileOk:"— read from this file · check it, then search",fileNoText:"Couldn't find a goods description. Please type it in.",
+    fileOk:"— read and searched automatically · edit above and search again if it's off",fileNoText:"Couldn't find a goods description. Please type it in.",
     fileTooBig:"File is too large. Please upload under 3MB.",fileBad:"Can't read this file. Only photos (JPG/PNG) or PDF.",
     filePages:"This PDF has {n} pages. Upload just the page with the goods list — it's faster and more accurate.",
     stamp:"Data source · Vietnam Import-Export Tariff 2026",noteTitle:"Notes",
@@ -400,7 +402,7 @@ const I18N={
     findbtn:"Tìm mã",try:"Thử một trong số này",recent:"Đã xác nhận gần đây",
     fastLabel:"Tìm nhanh",fastHint:"nhanh hơn cho mặt hàng đơn giản",
     attach:"Đính kèm ảnh hoặc PDF",dropHere:"Thả vào đây để đọc",reading:"Đang đọc chứng từ",
-    fileOk:"— đã đọc từ tệp này · kiểm tra rồi tìm",fileNoText:"Không tìm thấy mô tả hàng hóa. Vui lòng nhập tay.",
+    fileOk:"— đã đọc và tìm tự động · sửa ở trên rồi tìm lại nếu chưa đúng",fileNoText:"Không tìm thấy mô tả hàng hóa. Vui lòng nhập tay.",
     fileTooBig:"Tệp quá lớn. Vui lòng tải lên dưới 3MB.",fileBad:"Không đọc được tệp này. Chỉ ảnh (JPG/PNG) hoặc PDF.",
     filePages:"PDF này có {n} trang. Hãy tải lên đúng trang có danh mục hàng — nhanh và chính xác hơn.",
     stamp:"Nguồn dữ liệu · Biểu thuế XNK Việt Nam 2026",noteTitle:"Lưu ý",
@@ -991,12 +993,24 @@ function renderClarify(clarify,query){
 }
 
 /* ---------------- HS 코드 조회 렌더 ---------------- */
+// 목록 행에 보일 대표 세율 — hero 우선순위상 값이 있는 첫 세율(예: VKFTA→AKFTA→MFN).
+// 클릭해서 열지 않아도 핵심 세율이 한눈에 보이게 한다.
+function rowRateHTML(rec){
+  const rates=rec.r||{};
+  const heroes=rateSpecs().filter(s=>s.hero).sort((a,b)=>a.hero-b.hero);
+  for(const s of heroes){
+    const v=rates[s.key];
+    if(v!=null&&v!==''){ return `<span class="crr" title="${rateLabel(s)}">${s.badge?s.badge+' ':''}${cleanRate(v)}</span>`; }
+  }
+  return '';
+}
 function codeRowHTML(rec){
-  const leaf=rec.e.split(' > ').slice(-1)[0];
+  const leaf=(rec.k||rec.e).split(' > ').slice(-1)[0];   // 한국어 품명 우선(없으면 영문)
   const addMark=rec.add?`<span class="addmark" title="${(META&&META.notice&&(META.notice[LANG]||META.notice.en))||''}">🅐</span>`:'';
   return `<button class="coderow" data-code="${rec.c}">
     <span class="crc">${fmtCode(rec.c)}</span>
     <span class="crd">${leaf}${addMark}</span>
+    ${rowRateHTML(rec)}
     <svg class="cra" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>`;
 }
@@ -1135,7 +1149,8 @@ async function run(overrideText){
 }
 
 /* ---------------- 사진·PDF 첨부 → 품목명 추출 ----------------
-   OCR은 틀릴 수 있으므로 추출 결과를 검색창에 채워 사용자가 확인·수정한 뒤 검색하게 함. */
+   추출 결과를 검색창에 채운 뒤 바로 검색까지 자동 실행해 파일→결과를 한 번에 보여준다.
+   OCR은 틀릴 수 있으므로 채운 텍스트는 그대로 두어, 품목이 다르면 사용자가 고쳐 다시 찾을 수 있게 한다. */
 const MAX_UPLOAD=3*1024*1024;      // Vercel 요청 본문(4.5MB) - base64 33% 증가분 감안
 const PDF_PAGE_LIMIT=5;            // PDF는 장수만큼 과금·지연됨. 품목표는 보통 앞장에 있음
 const fileNote=document.getElementById('fileNote');
@@ -1259,8 +1274,9 @@ async function handleFile(file){
 
     if(!text){showFileNote('err',t('fileNoText'));return;}
     const ta=document.getElementById('src');
-    ta.value=text;ta.focus();
+    ta.value=text;
     showFileNote('ok',`${file.name} ${t('fileOk')}`);
+    setTimeout(run,0);   // 추출 결과로 바로 검색 — 파일→결과를 한 번에(추가 클릭 불필요). finally 정리 후 실행돼 상태표시 충돌 방지
   }catch(err){
     console.warn('[attach] 문서 읽기 실패:',err);
     showFileNote('err',t('fileBad'));
