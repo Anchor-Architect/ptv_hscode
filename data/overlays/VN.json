@@ -1,54 +1,77 @@
 {
-  "_doc": "베트남 무역구제(반덤핑 AD·상계 CVD·세이프가드 SG) 경고 층. 기본세율(data/VN.json) 위에 얹힌다. 이 파일은 '세율'이 아니라 '대상 여부 경고 + 공식 결정 안내'를 담는다 — 반덤핑 세율은 수출기업별로 다르고 수시 재심(재심·일몰)으로 바뀌므로 단일 숫자로 확정하지 않는다. 검색한 코드가 measures[].hs 에 걸리면 앱이 경고를 띄운다. korea_subject=true 는 한국산이 대상이라는 뜻(핵심). 새 조치는 measures 에 추가하고, 종료·일몰재심 진행 등 상태 불확실한 건 넣지 않는다(예: MSG AD09는 일몰재심 중이라 제외). 출처: 무역구제국(pvtm.gov.vn), VCCI(antidumping.vn).",
+  "_doc": "베트남 무역구제(반덤핑 AD·상계 CVD·세이프가드 SG) 경고 층. 기본세율(data/VN.json) 위에 얹힌다. '세율'이 아니라 '대상 여부 경고 + 법령 근거'를 담는다 — 반덤핑 세율은 수출기업별·수시 재심으로 바뀌므로 단일 숫자로 확정하지 않는다. 신빙성의 1차 근거는 citation(법령 번호+발령기관+일자) 텍스트, 2차는 검증된 공식 딥링크(official). 부령(Quyết định QĐ-BCT)은 정부 관보(công báo)에 실리지 않아 법령DB 문서별 URL을 쓰고, 시행령(Nghị định)은 vanban/congbao.chinhphu.vn 정부 딥링크를 쓴다. 검색 코드가 measures[].hs 에 걸리면 앱이 경고한다. korea_subject=true 는 한국산이 대상이라는 뜻(핵심). HS·세율은 반드시 결정 원문 기준으로 확인. 출처: 무역구제국(pvtm.gov.vn).",
   "country": "VN",
   "authority": "Cục Phòng vệ thương mại (Trade Remedies Authority of Vietnam, MOIT)",
   "authority_url": "https://pvtm.gov.vn",
   "updated": "2026-08-01",
   "notice": {
-    "ko": "이 품목은 베트남 무역구제(반덤핑 등) 조치 대상일 수 있습니다. 실제 부과세율은 수출기업·원산지증명에 따라 다르며 재심으로 바뀔 수 있으니, 통관 전 아래 공식 결정을 반드시 확인하세요.",
-    "en": "This item may be subject to a Vietnamese trade-remedy (anti-dumping) measure. The actual duty depends on the exporter and can change on review — verify against the official decision before customs clearance.",
-    "vi": "Mặt hàng này có thể thuộc diện bị áp dụng biện pháp phòng vệ thương mại (chống bán phá giá) của Việt Nam. Mức thuế thực tế tùy nhà xuất khẩu và có thể thay đổi khi rà soát — hãy kiểm tra quyết định chính thức trước khi thông quan."
+    "ko": "이 품목은 베트남 무역구제(반덤핑 등) 조치 대상일 수 있습니다. 실제 부과세율은 수출기업·원산지증명에 따라 다르며 재심으로 바뀔 수 있으니, 통관 전 아래 법령 근거를 반드시 확인하세요.",
+    "en": "This item may be subject to a Vietnamese trade-remedy (anti-dumping) measure. The actual duty depends on the exporter and can change on review — verify against the cited legal basis before customs clearance.",
+    "vi": "Mặt hàng này có thể thuộc diện bị áp dụng biện pháp phòng vệ thương mại (chống bán phá giá) của Việt Nam. Mức thuế thực tế tùy nhà xuất khẩu và có thể thay đổi khi rà soát — hãy kiểm tra căn cứ pháp lý được dẫn dưới đây trước khi thông quan."
   },
   "measures": [
     {
       "case": "AD19",
       "type": "AD",
       "product": {
-        "ko": "코팅강판 (아연·알루미늄 등 부식방지 코팅 평판압연강, 탄소 0.6% 미만)",
-        "en": "Certain coated steel (corrosion-resistant coated flat-rolled steel)",
-        "vi": "Một số sản phẩm thép mạ (thép phủ chống ăn mòn)"
+        "ko": "코팅강판 (아연·알루미늄-아연 등 부식방지 도금 평판압연강)",
+        "en": "Certain coated steel (corrosion-resistant metallic-coated flat-rolled steel)",
+        "vi": "Một số sản phẩm thép mạ (thép mạ chống ăn mòn)"
+      },
+      "citation": {
+        "ko": "Quyết định 2310/QĐ-BCT — 베트남 공상부(Bộ Công Thương), 2025-08-14",
+        "vi": "Quyết định số 2310/QĐ-BCT ngày 14/8/2025 của Bộ Công Thương"
+      },
+      "official": {
+        "url": "https://luatvietnam.vn/thue/quyet-dinh-2310-qd-bct-cua-bo-cong-thuong-ap-dung-thue-chong-ban-pha-gia-chinh-thuc-doi-voi-mot-so-san-pham-thep-ma-co-xuat-xu-tu-cong-hoa-nhan-dan-trung-hoa-va-dai-han-dan-quoc-408892-d1.html",
+        "kind": "db",
+        "label": { "ko": "법령 전문", "en": "Full text", "vi": "Toàn văn" }
       },
       "decision": "2310/QĐ-BCT",
       "decision_date": "2025-08-14",
       "duration": "5년 (2025-08-14 ~ 2030-08-13)",
       "hs": [
-        "72107012", "72107013", "72107019", "72107021", "72107029", "72107091", "72107099",
-        "72124011", "72124012", "72124013", "72124014", "72124019", "72124091", "72124099",
-        "72259990", "72269919", "72269999"
+        "72104111", "72104112", "72104119",
+        "72104911", "72104914", "72104915", "72104916", "72104917", "72104918", "72104919",
+        "72105000", "72106111", "72106112", "72106119", "72106911", "72106919",
+        "72109010", "72109090",
+        "72123011", "72123012", "72123013", "72123014", "72123019",
+        "72125014", "72125019", "72125023", "72125024", "72125029", "72125093", "72125094", "72125099",
+        "72126011", "72126012", "72126019",
+        "72259220", "72259290", "72259990",
+        "72269911", "72269919", "72269991", "72269999"
       ],
       "origins": ["CN", "KR"],
       "korea_subject": true,
       "rate_note": {
-        "ko": "한국산 최대 15.67%, 중국산 최대 37.13% — 수출기업별 상이",
-        "en": "Up to 15.67% (Korea), up to 37.13% (China); varies by exporter",
-        "vi": "Tối đa 15,67% (Hàn Quốc), tối đa 37,13% (Trung Quốc); tùy nhà xuất khẩu"
+        "ko": "한국산 15.67% (현대제철 12.00%), 중국산 최대 37.13% — 수출기업별 상이",
+        "en": "Korea 15.67% (Hyundai Steel 12.00%), China up to 37.13%; varies by exporter",
+        "vi": "Hàn Quốc 15,67% (Hyundai Steel 12,00%), Trung Quốc tối đa 37,13%; tùy nhà xuất khẩu"
       },
       "status": "in_force",
       "effective": "2025-08-14",
-      "source": "https://pvtm.gov.vn",
-      "verify_note": "HS 범위·기업별 세율은 공식 결정 2310/QĐ-BCT 본문 기준으로 최종 확인 필요."
+      "verify_note": "HS 범위·기업별 세율은 공식 결정 2310/QĐ-BCT 부록 기준으로 최종 확인. 도장(컬러)강판 7210.70은 이 조치 대상 아님."
     },
     {
       "case": "AD20",
       "type": "AD",
       "product": {
-        "ko": "열연강판 코일 (HRC, 폭 1,880mm 이하)",
-        "en": "Hot-rolled steel coils (HRC, width up to 1,880 mm)",
-        "vi": "Thép cuộn cán nóng (HRC, khổ đến 1.880 mm)"
+        "ko": "열연강판 코일 (HRC, 표면처리 안 됨, 폭 1,880mm 이하, 탄소 0.3% 이하)",
+        "en": "Hot-rolled steel coils (HRC, not surface-treated, width up to 1,880 mm)",
+        "vi": "Thép cuộn cán nóng (HRC, chưa xử lý bề mặt, khổ đến 1.880 mm)"
+      },
+      "citation": {
+        "ko": "Quyết định 1959/QĐ-BCT — 베트남 공상부, 2025-07-04",
+        "vi": "Quyết định số 1959/QĐ-BCT ngày 04/7/2025 của Bộ Công Thương"
+      },
+      "official": {
+        "url": "https://luatvietnam.vn/thue/quyet-dinh-1959-qd-bct-2025-ap-dung-thue-chong-ban-pha-gia-thep-can-nong-tu-trung-quoc-va-cham-dut-dieu-tra-tu-an-do-405185-d1.html",
+        "kind": "db",
+        "label": { "ko": "법령 전문", "en": "Full text", "vi": "Toàn văn" }
       },
       "decision": "1959/QĐ-BCT",
       "decision_date": "2025-07-04",
-      "duration": "5년 (2025-07-04 ~ 2030)",
+      "duration": "5년 (2025-07-06 ~ 2030)",
       "hs": [
         "72082500", "72082600", "72082719", "72082799", "72083600", "72083700", "72083800",
         "72083920", "72083940", "72083990", "72085100", "72085200", "72085300", "72085490", "72089090",
@@ -63,9 +86,8 @@
         "vi": "23,10–27,83% với Trung Quốc (tùy nhà xuất khẩu)"
       },
       "status": "in_force",
-      "effective": "2025-07-04",
-      "source": "https://pvtm.gov.vn",
-      "verify_note": "HS 범위·기업별 세율은 공식 결정 1959/QĐ-BCT 기준 확인. 별도로 대중국 반덤핑 우회방지(AC03.AD20) 조사도 진행 중."
+      "effective": "2025-07-06",
+      "verify_note": "HS·기업별 세율은 공식 결정 1959/QĐ-BCT 기준 확인. 대중국 반덤핑 우회방지(AC03.AD20) 조사도 별도 진행."
     },
     {
       "case": "AD13-AS01",
@@ -75,9 +97,18 @@
         "en": "Cane sugar",
         "vi": "Đường mía"
       },
-      "decision": "1578/QĐ-BCT (→ 1309/QĐ-BCT 2026-06-02 연장)",
+      "citation": {
+        "ko": "Quyết định 1578/QĐ-BCT (2021-06-15) → 1309/QĐ-BCT 재심 연장 (2026-06-02) — 베트남 공상부",
+        "vi": "Quyết định số 1578/QĐ-BCT ngày 15/6/2021, gia hạn theo Quyết định 1309/QĐ-BCT ngày 02/6/2026, Bộ Công Thương"
+      },
+      "official": {
+        "url": "https://thuvienphapluat.vn/van-ban/Xuat-nhap-khau/Quyet-dinh-1578-QD-BCT-2021-ap-dung-thue-chong-ban-pha-gia-duong-mia-co-xuat-xu-tu-Thai-Lan-479107.aspx",
+        "kind": "db",
+        "label": { "ko": "법령 전문", "en": "Full text", "vi": "Toàn văn" }
+      },
+      "decision": "1578/QĐ-BCT",
       "decision_date": "2021-06-15",
-      "duration": "2031-06까지 연장(일몰재심 후 5년 추가)",
+      "duration": "2031-06-15까지 (일몰재심 후 5년 연장)",
       "hs": ["17011300", "17011400", "17019100", "17019910", "17019990", "17029091"],
       "origins": ["TH"],
       "korea_subject": false,
@@ -88,7 +119,6 @@
       },
       "status": "in_force",
       "effective": "2021-06-16",
-      "source": "https://pvtm.gov.vn",
       "verify_note": "아세안 경유 우회(AC02.AD13-AS01) 조치도 별도 적용. HS·세율은 공식 결정 확인."
     }
   ]
