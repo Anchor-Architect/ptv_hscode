@@ -98,6 +98,16 @@ const CASE_SETS = {
   {q:"lốp xe ô tô",                          expect:["4011"]},
   {q:"áo len nam",                           expect:["6110"]},
   {q:"gạo trắng",                            expect:["1006"]},
+  // 철강 코팅 vs 비코팅 — 7208/7209("not coated")의 부정 표현에 코팅 제품이 끌려가던 문제 방지.
+  // 폭(≥/<600mm)은 사용자가 잘 안 줘 코팅은 7210·7212 모두 인정, 핵심은 코팅/비코팅 구분.
+  {q:"아연도금 강판",                        expect:["7210","7212"]},
+  {q:"galvanized steel sheet",               expect:["7210","7212"]},
+  {q:"컬러강판",                             expect:["7210","7212"]},
+  {q:"도장강판",                             expect:["7210","7212"]},
+  {q:"coated steel sheet",                   expect:["7210","7212"]},
+  {q:"열연강판",                             expect:["7208"]},
+  {q:"냉연강판",                             expect:["7209"]},
+  {q:"아연도금 냉연강판",                    expect:["7210","7212"]},
  ],
  US: [
   {q:"Men's knitted pullover, 100% polyester", expect:["6110"]},

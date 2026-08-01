@@ -459,8 +459,9 @@ function loadCountry(cc){
     fetch(`data/overlays/${cc}.json`).then(r=>r.ok?r.json():null).catch(()=>null)
   ]).then(([d,ov])=>{
     DATA=d.items||[];META=d.meta||null;OVERLAY=ov;
-    // 검색용 해이스택(영어+베트남어)을 폴딩해 미리 캐시 — 매 검색마다 성조 폴딩을 반복하지 않도록
-    for(const r of DATA)r._h=foldVN((r.e+' '+(r.v||'')).toLowerCase());
+    // 검색용 해이스택(영어+베트남어+한국어)을 폴딩해 미리 캐시. 한국어(k)를 넣어야
+    // 한국 사용자가 관세용어(도금·냉간압연 등)로 검색할 때 직접 매칭된다.
+    for(const r of DATA)r._h=foldVN((r.e+' '+(r.v||'')+' '+(r.k||'')).toLowerCase());
     applyCountryMeta();renderCountryPill();
   }).catch(err=>{
     console.warn('[data] 관세표 로드 실패:',err);
@@ -588,6 +589,7 @@ const SYN={
   '셔츠':'shirt','바지':'trousers pants','치마':'skirt','원피스':'dress','재킷':'jacket','코트':'coat','장갑':'gloves',
   '전선':'wire cable insulated','전화':'telephone','스마트폰':'smartphone telephone','노트북':'laptop portable data processing',
   '컴퓨터':'computer data processing machine','모니터':'monitor','타이어':'tyre tire pneumatic','커피':'coffee',
+  '에어컨':'air conditioning machine 공기조절','냉장고':'refrigerator refrigerating','세탁기':'washing machine',
   '초콜릿':'chocolate cocoa','맥주':'beer','쌀':'rice','밀가루':'wheat flour','시멘트':'cement','안전모':'safety helmet headgear',
   '원두':'coffee beans roasted','볶은':'roasted',
   '새우':'shrimp prawn tôm','냉동':'frozen đông lạnh',
@@ -624,7 +626,17 @@ const SYN={
   'giày':'footwear shoes','dép':'footwear sandals','giày da':'leather footwear',
   'áo len':'sweater pullover jersey knitted','áo khoác':'jacket coat anorak','áo sơ mi':'shirt',
   'gỗ dán':'plywood','ván ép':'plywood','thép không gỉ':'stainless steel','inox':'stainless steel',
-  'lốp':'tyre tire pneumatic','đông lạnh':'frozen','tôm':'shrimp prawn crustacean'
+  'lốp':'tyre tire pneumatic','đông lạnh':'frozen','tôm':'shrimp prawn crustacean',
+  // 철강 평판압연 — 콜로퀄어를 관세표 표기(압연품·도금·열간/냉간 압연)로 잇는다.
+  // 관세표는 "강판" 대신 "평탄 압연품", "galvanized" 대신 "zinc/도금"을 쓴다.
+  // 코팅(7210·7212) vs 비코팅(7208·7209)의 최종 구분은 AI 몫 — 프리필터는 둘 다 후보에 올린다.
+  '강판':'flat-rolled steel 평탄 압연품 강','철판':'flat-rolled steel 압연품','후판':'flat-rolled steel 압연품 두꺼운',
+  '열연':'hot-rolled 열간 압연','냉연':'cold-rolled 냉간 압연',
+  '아연도금':'galvanized zinc coated plated 아연 도금 코팅','아연':'zinc 아연',
+  '도금':'plated coated 도금 코팅 피복','도장':'painted coated 도장','컬러강판':'painted color coated 도장 압연품',
+  // 'coated'는 코팅(7210)·비코팅(7208 "not coated") 양쪽에 다 걸린다. 7210만 가진 코팅 하위어
+  // (zinc·tin·주석·아연·painted)를 더해 코팅 쪽을 후보에 확실히 올린다(최종 구분은 AI).
+  'galvanized':'zinc coated plated 아연 도금','coated':'coated plated clad zinc tin painted 도금 코팅','coil':'coils 코일',
   // 주의: 'glass':'glassware' 는 넣지 않는다 — 포장용 유리병(7010)이 식탁용 유리제품(7013)으로 잘못 감(회귀 확인)
 };
 /* 베트남어 성조 부호 제거(ASCII 폴딩). á→a, đ→d 등.
@@ -663,7 +675,7 @@ function prefilter(query,limit,stats){
   // 1차: 항목별로 맞는 토큰을 모으며 토큰 출현 빈도(df)도 함께 센다.
   const hits=[],df={};
   for(const r of DATA){
-    const hay=r._h||foldVN((r.e+' '+(r.v||'')).toLowerCase());
+    const hay=r._h||foldVN((r.e+' '+(r.v||'')+' '+(r.k||'')).toLowerCase());
     let m=null;
     for(let i=0;i<toks.length;i++){
       if(matchers[i](hay)){(m||(m=[])).push(toks[i]);df[toks[i]]=(df[toks[i]]||0)+1;}
