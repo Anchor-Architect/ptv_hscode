@@ -1,9 +1,9 @@
 {
-  "_doc": "베트남 무역구제(반덤핑 AD·상계 CVD·세이프가드 SG) 경고 층. 기본세율(data/VN.json) 위에 얹힌다. 이 파일은 '세율'이 아니라 '대상 여부 경고 + 공식 결정 안내'를 담는다 — 반덤핑 세율은 수출기업별로 다르고 수시 재심(재심·일몰)으로 바뀌므로 단일 숫자로 확정하지 않는다. 검색한 코드가 measures[].hs 에 걸리면 앱이 경고를 띄운다. korea_subject=true 는 한국산이 대상이라는 뜻(핵심). 새 조치는 measures 에 추가하고, 종료·상태 불확실한 건 넣지 않는다. 출처: 무역구제국(pvtm.gov.vn).",
+  "_doc": "베트남 무역구제(반덤핑 AD·상계 CVD·세이프가드 SG) 경고 층. 기본세율(data/VN.json) 위에 얹힌다. 이 파일은 '세율'이 아니라 '대상 여부 경고 + 공식 결정 안내'를 담는다 — 반덤핑 세율은 수출기업별로 다르고 수시 재심(재심·일몰)으로 바뀌므로 단일 숫자로 확정하지 않는다. 검색한 코드가 measures[].hs 에 걸리면 앱이 경고를 띄운다. korea_subject=true 는 한국산이 대상이라는 뜻(핵심). 새 조치는 measures 에 추가하고, 종료·일몰재심 진행 등 상태 불확실한 건 넣지 않는다(예: MSG AD09는 일몰재심 중이라 제외). 출처: 무역구제국(pvtm.gov.vn), VCCI(antidumping.vn).",
   "country": "VN",
   "authority": "Cục Phòng vệ thương mại (Trade Remedies Authority of Vietnam, MOIT)",
   "authority_url": "https://pvtm.gov.vn",
-  "updated": "2026-07-31",
+  "updated": "2026-08-01",
   "notice": {
     "ko": "이 품목은 베트남 무역구제(반덤핑 등) 조치 대상일 수 있습니다. 실제 부과세율은 수출기업·원산지증명에 따라 다르며 재심으로 바뀔 수 있으니, 통관 전 아래 공식 결정을 반드시 확인하세요.",
     "en": "This item may be subject to a Vietnamese trade-remedy (anti-dumping) measure. The actual duty depends on the exporter and can change on review — verify against the official decision before customs clearance.",
@@ -14,12 +14,13 @@
       "case": "AD19",
       "type": "AD",
       "product": {
-        "ko": "코팅강판 (도금·컬러강판 등 특정 코팅 평판압연강)",
-        "en": "Certain coated steel",
-        "vi": "Một số sản phẩm thép mạ (thép phủ màu)"
+        "ko": "코팅강판 (아연·알루미늄 등 부식방지 코팅 평판압연강, 탄소 0.6% 미만)",
+        "en": "Certain coated steel (corrosion-resistant coated flat-rolled steel)",
+        "vi": "Một số sản phẩm thép mạ (thép phủ chống ăn mòn)"
       },
       "decision": "2310/QĐ-BCT",
       "decision_date": "2025-08-14",
+      "duration": "5년 (2025-08-14 ~ 2030-08-13)",
       "hs": [
         "72107012", "72107013", "72107019", "72107021", "72107029", "72107091", "72107099",
         "72124011", "72124012", "72124013", "72124014", "72124019", "72124091", "72124099",
@@ -36,6 +37,59 @@
       "effective": "2025-08-14",
       "source": "https://pvtm.gov.vn",
       "verify_note": "HS 범위·기업별 세율은 공식 결정 2310/QĐ-BCT 본문 기준으로 최종 확인 필요."
+    },
+    {
+      "case": "AD20",
+      "type": "AD",
+      "product": {
+        "ko": "열연강판 코일 (HRC, 폭 1,880mm 이하)",
+        "en": "Hot-rolled steel coils (HRC, width up to 1,880 mm)",
+        "vi": "Thép cuộn cán nóng (HRC, khổ đến 1.880 mm)"
+      },
+      "decision": "1959/QĐ-BCT",
+      "decision_date": "2025-07-04",
+      "duration": "5년 (2025-07-04 ~ 2030)",
+      "hs": [
+        "72082500", "72082600", "72082719", "72082799", "72083600", "72083700", "72083800",
+        "72083920", "72083940", "72083990", "72085100", "72085200", "72085300", "72085490", "72089090",
+        "72111415", "72111416", "72111419", "72111913", "72111919", "72119012", "72119019",
+        "72253090", "72254090", "72259990", "72269110", "72269190"
+      ],
+      "origins": ["CN"],
+      "korea_subject": false,
+      "rate_note": {
+        "ko": "중국산 23.10~27.83% (수출기업별)",
+        "en": "23.10–27.83% on China (varies by exporter)",
+        "vi": "23,10–27,83% với Trung Quốc (tùy nhà xuất khẩu)"
+      },
+      "status": "in_force",
+      "effective": "2025-07-04",
+      "source": "https://pvtm.gov.vn",
+      "verify_note": "HS 범위·기업별 세율은 공식 결정 1959/QĐ-BCT 기준 확인. 별도로 대중국 반덤핑 우회방지(AC03.AD20) 조사도 진행 중."
+    },
+    {
+      "case": "AD13-AS01",
+      "type": "AD+CVD",
+      "product": {
+        "ko": "사탕수수 설탕 (원당·정제당)",
+        "en": "Cane sugar",
+        "vi": "Đường mía"
+      },
+      "decision": "1578/QĐ-BCT (→ 1309/QĐ-BCT 2026-06-02 연장)",
+      "decision_date": "2021-06-15",
+      "duration": "2031-06까지 연장(일몰재심 후 5년 추가)",
+      "hs": ["17011300", "17011400", "17019100", "17019910", "17019990", "17029091"],
+      "origins": ["TH"],
+      "korea_subject": false,
+      "rate_note": {
+        "ko": "태국산 반덤핑 42.99% + 상계관세 4.65%",
+        "en": "Thailand: AD 42.99% + CVD 4.65%",
+        "vi": "Thái Lan: CBPG 42,99% + CTC 4,65%"
+      },
+      "status": "in_force",
+      "effective": "2021-06-16",
+      "source": "https://pvtm.gov.vn",
+      "verify_note": "아세안 경유 우회(AC02.AD13-AS01) 조치도 별도 적용. HS·세율은 공식 결정 확인."
     }
   ]
 }
