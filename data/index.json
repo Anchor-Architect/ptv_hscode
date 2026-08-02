@@ -15,6 +15,14 @@
    "flag": "🇻🇳",
    "version": "2026",
    "updated": "2026-07-28"
+  },
+  {
+   "country": "CN",
+   "name_ko": "중국",
+   "name_en": "China",
+   "flag": "🇨🇳",
+   "version": "2026 (베타)",
+   "updated": "2026-08-02"
   }
  ]
 }

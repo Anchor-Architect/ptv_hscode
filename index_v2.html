@@ -926,6 +926,10 @@ function renderAnswer(res,query){
   const addBanner = b.rec.add&&addNote
     ? `<div class="twinwarn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:0 0 auto;margin-top:2px"><path d="M12 3l9 16H3z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4M12 16.5v.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>${addNote}</span></div>`
     : '';
+  // 베타 국가(예: 중국) — 데이터 한계(MFN 미포함·6자리 설명)를 결과마다 안내. 관세 신뢰성상 필수.
+  const betaBanner = (META&&/베타|beta/i.test(String(META.version||''))&&addNote&&!b.rec.add)
+    ? `<div class="twinwarn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:0 0 auto;margin-top:2px"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M12 8v.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>${addNote}</span></div>`
+    : '';
 
   answerMount.innerHTML=`
    <div class="answer">
@@ -938,6 +942,7 @@ function renderAnswer(res,query){
         </div>
         ${pathHTML(b.rec)}
         ${addBanner}
+        ${betaBanner}
         ${tradeRemedyBannerHTML(b.rec.c)}
         ${twinBanner}
         ${recallBanner}
