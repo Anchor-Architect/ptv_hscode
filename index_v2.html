@@ -712,12 +712,15 @@ function prefilter(query,limit,stats){
 /* 관세표 원본에 6자리 소호 설명이 없어, 설명이 완전히 같은 형제 코드가 존재한다(약 10%).
    이 경우 8자리 선택은 사실상 임의이므로 그 사실을 세어 적합도에 반영한다. */
 let TWIN_INDEX=null;
+// 가장 구체적인 설명(8자리 국문 k 우선, 없으면 영문 e)으로 형제 판정.
+// 중국은 e가 6자리 국제설명(공유)이라 e로 세면 과도하게 잡히지만, k는 8자리 세부명칭이라 정확.
+function twinKey(r){return r.k||r.e;}
 function countTwins(rec){
   if(!TWIN_INDEX){
     TWIN_INDEX={};
-    for(const r of DATA)TWIN_INDEX[r.e]=(TWIN_INDEX[r.e]||0)+1;
+    for(const r of DATA)TWIN_INDEX[twinKey(r)]=(TWIN_INDEX[twinKey(r)]||0)+1;
   }
-  return TWIN_INDEX[rec.e]||1;
+  return TWIN_INDEX[twinKey(rec)]||1;
 }
 
 /* 관세표는 영어·베트남어만 있어 순수 한국어 검색어는 substring 매칭이 안 됨.
