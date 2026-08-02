@@ -652,9 +652,18 @@ function expandSynonyms(s){        // s는 이미 폴딩·소문자
   return x;
 }
 function tokenize(s){
-  // 입력을 폴딩해 SYN 키를 매칭한 뒤, 붙인 SYN 값(베트남어 포함)까지 다시 폴딩해 조각남을 막는다
-  return foldVN(expandSynonyms(foldVN(s.toLowerCase())))
-    .replace(/[^a-z0-9가-힣%]+/g,' ').split(/\s+/).filter(w=>w.length>1);
+  // 입력을 폴딩해 SYN 키를 매칭한 뒤, 붙인 SYN 값(베트남어 포함)까지 다시 폴딩해 조각남을 막는다.
+  // CJK(중문)는 문자경계·띄어쓰기가 없어 런을 바이그램으로 분해한다(智能手机→智能·能手·手机).
+  const words=foldVN(expandSynonyms(foldVN(s.toLowerCase())))
+    .replace(/[^a-z0-9가-힣一-鿿%]+/g,' ').split(/\s+/).filter(Boolean);
+  const out=[];
+  for(const w of words){
+    if(/[一-鿿]/.test(w)){                       // 한자 런: 바이그램(2자+) 또는 단자
+      if(w.length===1) out.push(w);
+      else for(let i=0;i<w.length-1;i++) out.push(w.slice(i,i+2));
+    }else if(w.length>1) out.push(w);                    // 라틴·한글: 기존대로 2자+
+  }
+  return out;
 }
 /* 토큰별 매칭기. 부분 문자열 매칭은 "hex"가 "cyclohexane"에 걸리는 등 오탐이 많아
    단어 경계를 본다. 4자 이상은 단어 앞부분 일치(bolt→bolts), 3자 이하는 완전 일치. */
