@@ -772,6 +772,12 @@ From ONLY the candidate list below, choose the single best 8-digit HS code, plus
 
 If the correct code genuinely depends on a distinguishing attribute the user did NOT provide (e.g. cotton vs man-made fibre, knitted vs woven), AND that attribute changes which candidate wins, return a single clarifying question with 2-3 concrete options. Otherwise omit it.
 
+Calibrate "confidence" honestly, not optimistically — a wrong "high" reading costs the user money:
+- 85-100: the goods wording specifically and unambiguously matches exactly one code (material, use, form and processing all determined by the text).
+- 60-84: the best code is probable, but the description is generic or you had to assume one distinguishing attribute.
+- below 55: several candidates fit almost equally, or the description is too vague to pin a single 8-digit line.
+When a distinguishing attribute is missing, prefer returning a clarify question over a confident guess.
+
 Write "reason" fields in ${langName}. Keep each reason to one short sentence. Do NOT translate the tariff description text itself.
 
 Goods: "${query}"
@@ -801,6 +807,9 @@ Respond ONLY with minified JSON, no markdown:
     best.twins=countTwins(best.rec);   // 설명이 똑같은 형제 코드 수 → 적합도 보정에 사용
     const alts=(p.alts||[]).filter(a=>byCode[a.code]&&a.code!==p.best.code)
       .map(a=>({rec:byCode[a.code],conf:a.confidence,reason:a.reason}));
+    // 근사동점 가드: 최상위와 차순위 후보가 근소차면 8자리 확정이 사실상 임의다.
+    // 모델(특히 haiku)이 자기보고한 '높음'을 신뢰하지 말고 '보통'으로 낮춘다(언어·모델 무관).
+    if(!p.clarify&&best.conf>60&&alts.length&&(best.conf-alts[0].conf)<=10)best.conf=60;
     return{ok:true,best,alts,clarify:p.clarify||null,ai:true};
   }catch(err){
     console.warn('[classify] AI 응답 처리 실패 → 데모(키워드) 폴백:',err);
