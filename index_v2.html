@@ -370,7 +370,7 @@ const I18N={
     twinWarn:"관세표에 이 코드와 <b>설명이 똑같은 세부 코드가 {n}개</b> 있어요. 앞 6자리까지는 이 분류가 맞지만, 마지막 2자리는 통관 담당자와 확인하세요.",
     rateBase:"수입세율 (기본)",rateKR:"한-베 FTA",rateVAT:"수입 VAT",ratesAll:"전체 세율",seeReason:"판단 근거",altsTitle:"다른 후보",useThis:"이 코드로 보기",
     rawValue:"관세표 원문",
-    codeListSub:"이 호에 속한 세부 코드 {n}개 · 눌러서 상세 보기",codeMore:"외 {n}개 더 있어요. 코드를 더 자세히 입력하면 좁혀져요.",
+    codeListSub:"이 코드로 시작하는 세부 코드 {n}개 · 눌러서 상세 보기",codeMore:"외 {n}개 더 있어요. 코드를 더 자세히 입력하면 좁혀져요.",
     codeMiss:"{c} — 관세표에 없는 코드예요.",codeNear:"가장 가까운 코드({c})예요:",codeNoNear:"비슷한 코드도 찾지 못했어요. 코드를 다시 확인해 주세요.",
     refLabel:"참조용",refShort:"본 HS 코드는 참조용입니다. 정확한 원재료·HS 해석·사용 목적에 따라 코드가 달라질 수 있어요.",
     rateNote:"세율은 2026년 관세표 기준이며, 6개월~1년 주기로 갱신될 수 있어요. 신고 시점에 다시 확인하세요.",
@@ -396,7 +396,7 @@ const I18N={
     twinWarn:"The tariff has <b>{n} codes with wording identical</b> to this one. The classification holds to the first 6 digits, but confirm the last 2 with your customs officer.",
     rateBase:"Import duty (base)",rateKR:"Korea FTA",rateVAT:"Import VAT",ratesAll:"All duty rates",seeReason:"Reasoning",altsTitle:"Other candidates",useThis:"Use this code",
     rawValue:"Tariff original",
-    codeListSub:"{n} detailed codes under this heading · tap for details",codeMore:"and {n} more. Type more digits to narrow it down.",
+    codeListSub:"{n} detailed codes starting with this · tap for details",codeMore:"and {n} more. Type more digits to narrow it down.",
     codeMiss:"{c} — not found in the tariff.",codeNear:"Closest codes ({c}):",codeNoNear:"No similar code found. Please check the code again.",
     refLabel:"Reference only",refShort:"This HS code is for reference. The exact raw material, HS interpretation and intended use may change the code.",
     rateNote:"Rates are based on the 2026 tariff and may be revised every 6–12 months. Re-check at the time of filing.",
@@ -422,7 +422,7 @@ const I18N={
     twinWarn:"Biểu thuế có <b>{n} mã có mô tả giống hệt</b> mã này. Phân loại đúng đến 6 số đầu, nhưng 2 số cuối cần xác nhận với cán bộ hải quan.",
     rateBase:"Thuế NK (cơ bản)",rateKR:"FTA Hàn-Việt",rateVAT:"VAT nhập khẩu",ratesAll:"Toàn bộ thuế suất",seeReason:"Lập luận",altsTitle:"Ứng viên khác",useThis:"Dùng mã này",
     rawValue:"Nguyên văn biểu thuế",
-    codeListSub:"{n} mã chi tiết thuộc nhóm này · bấm để xem",codeMore:"và {n} mã nữa. Nhập thêm chữ số để thu hẹp.",
+    codeListSub:"{n} mã chi tiết bắt đầu bằng mã này · bấm để xem",codeMore:"và {n} mã nữa. Nhập thêm chữ số để thu hẹp.",
     codeMiss:"{c} — không có trong biểu thuế.",codeNear:"Mã gần nhất ({c}):",codeNoNear:"Không tìm thấy mã tương tự. Vui lòng kiểm tra lại mã.",
     refLabel:"Chỉ tham khảo",refShort:"Mã HS này chỉ để tham khảo. Nguyên liệu, cách diễn giải và mục đích sử dụng có thể làm thay đổi mã.",
     rateNote:"Thuế suất theo biểu thuế 2026 và có thể được cập nhật mỗi 6–12 tháng. Hãy kiểm tra lại tại thời điểm khai báo.",
@@ -1143,11 +1143,12 @@ function resetHome(){
 }
 document.querySelector('.lockup').addEventListener('click',resetHome);
 
-/* 입력이 HS 코드인가? 숫자와 점만으로 이뤄지고 숫자가 4자리 이상이면 코드로 본다.
-   ("6110", "6110.30", "611030", "6110.30.00" 모두 코드) */
+/* 입력이 HS 코드인가? 숫자와 점만으로 이뤄지고 숫자가 2자리 이상이면 코드로 본다.
+   2~3자리는 류(chapter)·호 접두로 보고 세부 코드 목록을 보여준다(AI 오분류 방지).
+   ("61" 류, "6110" 호, "6110.30", "611030", "6110.30.00" 모두 코드) */
 function asHsCode(q){
   const digits=q.replace(/[.\s]/g,'');
-  if(/^\d{4,}$/.test(digits)&&/^[\d.\s]+$/.test(q))return digits;
+  if(/^\d{2,}$/.test(digits)&&/^[\d.\s]+$/.test(q))return digits;
   return null;
 }
 /* 코드 접두로 데이터에서 조회. 완전코드면 [정확], 부분코드면 그 호의 세부 코드 목록 */
