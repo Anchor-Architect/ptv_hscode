@@ -773,10 +773,10 @@ From ONLY the candidate list below, choose the single best 8-digit HS code, plus
 If the correct code genuinely depends on a distinguishing attribute the user did NOT provide (e.g. cotton vs man-made fibre, knitted vs woven), AND that attribute changes which candidate wins, return a single clarifying question with 2-3 concrete options. Otherwise omit it.
 
 Calibrate "confidence" honestly, not optimistically — a wrong "high" reading costs the user money:
-- 85-100: the goods wording specifically and unambiguously matches exactly one code (material, use, form and processing all determined by the text).
+- 85-100: the goods wording names a specific product that unambiguously matches exactly one code (material, use, form and processing all determined by the text). e.g. "hot-rolled steel coil 3mm", "men's cotton knitted T-shirt".
 - 60-84: the best code is probable, but the description is generic or you had to assume one distinguishing attribute.
-- below 55: several candidates fit almost equally, or the description is too vague to pin a single 8-digit line.
-When a distinguishing attribute is missing, prefer returning a clarify question over a confident guess.
+- below 55: the description names only a material and/or a generic word (e.g. "plastic part", "metal component", "machine part", "부품", "기타") with no specific product identity, OR several candidates fit almost equally. In this case you are essentially guessing which 8-digit line — say so with low confidence.
+A bare material + generic noun is NOT specific enough for high confidence: "plastic part" could be any of hundreds of codes, so its confidence must stay below 55 and you SHOULD return a clarify question asking what the part actually is. Prefer a clarify question over a confident guess whenever the product identity is missing.
 
 Write "reason" fields in ${langName}. Keep each reason to one short sentence. Do NOT translate the tariff description text itself.
 
